@@ -331,36 +331,93 @@ let fireworksBgmUnlocked = false;
    ★ 音量先設 0，所以不會提前出聲。
 ========================================================= */
 
+let fireworksAudioContext = null;
+let fireworksAudioBuffer = null;
+let fireworksBufferSource = null;
+let fireworksGainNode = null;
+let fireworksKeepAlive = null;
+
 function unlockFireworksBgm() {
 
     if (fireworksBgmUnlocked) {
         return;
     }
 
+    fireworksBgmUnlocked = true;
+
     /*
-       iPhone Safari：
-       不使用 muted，也不 play → pause。
-       在「FOR SANS」這次使用者點擊中，
-       直接讓 HBD 以 volume = 0 持續播放，
-       保留之後可出聲的播放資格。
+       iPhone Safari 專用處理：
+       在「FOR SANS」這次真人點擊中建立並啟動 Web Audio。
+       這裡不播放 HBD，所以開場不可能偷唱；
+       但 AudioContext 的播放資格會保留到最後煙火。
     */
-    fireworksBgm.muted = false;
-    fireworksBgm.volume = 0;
-    fireworksBgm.currentTime = 0;
+    try {
 
-    const playPromise = fireworksBgm.play();
+        const AudioContextClass =
+            window.AudioContext || window.webkitAudioContext;
 
-    if (playPromise !== undefined) {
-        playPromise
-            .then(() => {
-                fireworksBgmUnlocked = true;
+        if (!AudioContextClass) {
+            return;
+        }
+
+        fireworksAudioContext =
+            new AudioContextClass();
+
+        fireworksGainNode =
+            fireworksAudioContext.createGain();
+
+        fireworksGainNode.gain.value = 0.22;
+        fireworksGainNode.connect(
+            fireworksAudioContext.destination
+        );
+
+        /*
+           0 音量 keep-alive：只維持 iPhone 的音訊播放資格，
+           完全不會發出聲音。
+        */
+        const silentGain =
+            fireworksAudioContext.createGain();
+        silentGain.gain.value = 0;
+        silentGain.connect(
+            fireworksAudioContext.destination
+        );
+
+        fireworksKeepAlive =
+            fireworksAudioContext.createOscillator();
+        fireworksKeepAlive.connect(silentGain);
+        fireworksKeepAlive.start();
+
+        fireworksAudioContext.resume().catch(() => {});
+
+        /*
+           背景預先把 HBD 讀進記憶體。
+           等真正到煙火時，不需要重新向 Safari 要播放權限。
+        */
+        fetch("assets/audio/HBD.mp3")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("HBD.mp3 載入失敗");
+                }
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer =>
+                fireworksAudioContext.decodeAudioData(arrayBuffer)
+            )
+            .then(buffer => {
+                fireworksAudioBuffer = buffer;
             })
             .catch(error => {
                 console.log(
-                    "第三段 HBD BGM 預先解鎖失敗：",
+                    "第三段 HBD BGM 預載失敗：",
                     error
                 );
             });
+
+    } catch (error) {
+        console.log(
+            "第三段 HBD Web Audio 初始化失敗：",
+            error
+        );
     }
 }
 
@@ -378,30 +435,68 @@ function startFireworksBgm() {
     fireworksBgmStarted = true;
 
     /*
-       HBD 從開場點擊後一直以 0 音量運行。
-       到「最後最後……」這裡只需要從頭定位並把音量打開，
-       不依賴 iPhone 再次批准新的播放動作。
+       優先使用開場點擊時已取得播放資格的 Web Audio。
+       這條路徑不再依賴最後一刻的 HTML Audio autoplay。
+    */
+    if (
+        fireworksAudioContext &&
+        fireworksAudioBuffer &&
+        fireworksGainNode
+    ) {
+
+        try {
+
+            fireworksAudioContext.resume().catch(() => {});
+
+            if (fireworksBufferSource) {
+                try {
+                    fireworksBufferSource.stop();
+                } catch (error) {}
+            }
+
+            fireworksBufferSource =
+                fireworksAudioContext.createBufferSource();
+
+            fireworksBufferSource.buffer =
+                fireworksAudioBuffer;
+
+            fireworksBufferSource.loop = true;
+
+            fireworksBufferSource.connect(
+                fireworksGainNode
+            );
+
+            fireworksBufferSource.start(0);
+
+            return;
+
+        } catch (error) {
+            console.log(
+                "第三段 HBD Web Audio 播放失敗，改用備援：",
+                error
+            );
+        }
+    }
+
+    /*
+       備援：非 Safari 或 Web Audio 預載失敗時，
+       仍保留原本 HTML Audio 播放方式。
     */
     fireworksBgm.muted = false;
     fireworksBgm.currentTime = 0;
     fireworksBgm.volume = 0.22;
 
-    if (fireworksBgm.paused) {
+    const playPromise = fireworksBgm.play();
 
-        const playPromise = fireworksBgm.play();
-
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                fireworksBgmStarted = false;
-                console.log(
-                    "第三段 HBD BGM 無法播放：",
-                    error
-                );
-            });
-        }
-
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            fireworksBgmStarted = false;
+            console.log(
+                "第三段 HBD BGM 無法播放：",
+                error
+            );
+        });
     }
-
 }
 
 
