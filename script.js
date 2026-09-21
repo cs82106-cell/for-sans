@@ -347,8 +347,66 @@ let fireworksBgmUnlocked = false;
 
 function unlockFireworksBgm() {
 
-    // iPhone Safari：開場時不要播放或建立第三段音樂。
-    fireworksBgmUnlocked = true;
+    /*
+       開場時完全不碰 HBD。
+       保留這個函式只是避免舊程式引用出錯。
+    */
+    return;
+
+}
+
+
+/* =========================================================
+   ★ iPhone Safari：在進入星空前「最後一次真人點擊」
+     取得 HBD 播放資格。
+
+   注意：
+   - 這裡才建立 HBD Audio
+   - volume = 0，所以此時不會聽到生日快樂
+   - play() 後不 pause，保留 Safari 已取得的播放狀態
+   - 到「最後最後……」時再歸零並打開音量
+========================================================= */
+
+function armFireworksBgm() {
+
+    if (fireworksBgmUnlocked) {
+        return;
+    }
+
+    const fireworksAudio =
+        getFireworksBgm();
+
+    fireworksAudio.muted = false;
+    fireworksAudio.volume = 0;
+    fireworksAudio.currentTime = 0;
+
+    const playPromise =
+        fireworksAudio.play();
+
+    if (
+        playPromise !== undefined
+    ) {
+
+        playPromise
+            .then(() => {
+
+                fireworksBgmUnlocked = true;
+
+            })
+            .catch(error => {
+
+                console.log(
+                    "第三段 HBD BGM 解鎖失敗：",
+                    error
+                );
+
+            });
+
+    } else {
+
+        fireworksBgmUnlocked = true;
+
+    }
 
 }
 
@@ -363,33 +421,54 @@ function startFireworksBgm() {
         return;
     }
 
-    const fireworksAudio = getFireworksBgm();
+    const fireworksAudio =
+        getFireworksBgm();
 
     fireworksBgmStarted = true;
 
+    /*
+       正常流程下，HBD 已經在最後一次 NPC 點擊時
+       以 0 音量持續播放。
+
+       所以這裡不重新要求 Safari 播放，
+       只把歌曲拉回開頭並打開正常音量。
+    */
+    try {
+        fireworksAudio.currentTime = 0;
+    } catch (error) {}
+
+    fireworksAudio.muted = false;
     fireworksAudio.volume = 0.22;
 
 
-    const playPromise =
-        fireworksAudio.play();
+    /*
+       保險：
+       如果瀏覽器中途真的把音訊暫停，
+       才補一次 play()。
+    */
+    if (fireworksAudio.paused) {
 
+        const playPromise =
+            fireworksAudio.play();
 
-    if (
-        playPromise !== undefined
-    ) {
+        if (
+            playPromise !== undefined
+        ) {
 
-        playPromise.catch(
-            error => {
+            playPromise.catch(
+                error => {
 
-                fireworksBgmStarted = false;
+                    fireworksBgmStarted = false;
 
-                console.log(
-                    "第三段 HBD BGM 無法播放：",
-                    error
-                );
+                    console.log(
+                        "第三段 HBD BGM 無法播放：",
+                        error
+                    );
 
-            }
-        );
+                }
+            );
+
+        }
 
     }
 
@@ -6762,6 +6841,13 @@ transitionDialog.addEventListener(
             currentTransitionDialogue >=
             transitionDialogues.length - 1
         ) {
+
+            /*
+               ★ 這一下是進入星空祝福前最後一次真人點擊。
+               利用這次點擊取得 iPhone Safari 的 HBD 播放資格。
+               此時音量為 0，不會聽到生日快樂。
+            */
+            armFireworksBgm();
 
             finishTransitionScene();
 
