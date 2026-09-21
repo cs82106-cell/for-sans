@@ -337,7 +337,15 @@ function unlockFireworksBgm() {
         return;
     }
 
-    fireworksBgm.muted = true;
+    /*
+       iPhone Safari：
+       不使用 muted，也不 play → pause。
+       在「FOR SANS」這次使用者點擊中，
+       直接讓 HBD 以 volume = 0 持續播放，
+       保留之後可出聲的播放資格。
+    */
+    fireworksBgm.muted = false;
+    fireworksBgm.volume = 0;
     fireworksBgm.currentTime = 0;
 
     const playPromise = fireworksBgm.play();
@@ -345,11 +353,13 @@ function unlockFireworksBgm() {
     if (playPromise !== undefined) {
         playPromise
             .then(() => {
-                // 保持靜音播放，不 pause，保留 iPhone 的使用者手勢播放資格
                 fireworksBgmUnlocked = true;
             })
             .catch(error => {
-                console.log("第三段 HBD BGM 預先解鎖失敗：", error);
+                console.log(
+                    "第三段 HBD BGM 預先解鎖失敗：",
+                    error
+                );
             });
     }
 }
@@ -367,33 +377,28 @@ function startFireworksBgm() {
 
     fireworksBgmStarted = true;
 
-    // 正式進入煙火段：從頭開始並解除靜音
-    fireworksBgm.currentTime = 0;
+    /*
+       HBD 從開場點擊後一直以 0 音量運行。
+       到「最後最後……」這裡只需要從頭定位並把音量打開，
+       不依賴 iPhone 再次批准新的播放動作。
+    */
     fireworksBgm.muted = false;
-
+    fireworksBgm.currentTime = 0;
     fireworksBgm.volume = 0.22;
 
+    if (fireworksBgm.paused) {
 
-    const playPromise =
-        fireworksBgm.play();
+        const playPromise = fireworksBgm.play();
 
-
-    if (
-        playPromise !== undefined
-    ) {
-
-        playPromise.catch(
-            error => {
-
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
                 fireworksBgmStarted = false;
-
                 console.log(
                     "第三段 HBD BGM 無法播放：",
                     error
                 );
-
-            }
-        );
+            });
+        }
 
     }
 
