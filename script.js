@@ -309,27 +309,12 @@ function fadeOutBlessingBgm(
      只要改這一行路徑即可。
 ========================================================= */
 
-let fireworksBgm = null;
-
-function getFireworksBgm() {
-
-    if (!fireworksBgm) {
-        fireworksBgm = new Audio(
-            "assets/audio/HBD.mp3"
-        );
-        fireworksBgm.loop = true;
-
-/*
-   ★ 第三段背景音量
-   0.22 = 22%
-*/
-
-        fireworksBgm.volume = 0.22;
-        fireworksBgm.preload = "metadata";
-    }
-
-    return fireworksBgm;
-}
+const fireworksBgm = new Audio(
+    "assets/audio/HBD.mp3"
+);
+fireworksBgm.loop = true;
+fireworksBgm.volume = 0.22;
+fireworksBgm.preload = "auto";
 
 
 let fireworksBgmStarted = false;
@@ -347,8 +332,26 @@ let fireworksBgmUnlocked = false;
 ========================================================= */
 
 function unlockFireworksBgm() {
-    // 開場不建立、不播放第三段 BGM。
-    fireworksBgmUnlocked = true;
+
+    if (fireworksBgmUnlocked) {
+        return;
+    }
+
+    fireworksBgm.muted = true;
+    fireworksBgm.currentTime = 0;
+
+    const playPromise = fireworksBgm.play();
+
+    if (playPromise !== undefined) {
+        playPromise
+            .then(() => {
+                // 保持靜音播放，不 pause，保留 iPhone 的使用者手勢播放資格
+                fireworksBgmUnlocked = true;
+            })
+            .catch(error => {
+                console.log("第三段 HBD BGM 預先解鎖失敗：", error);
+            });
+    }
 }
 
 
@@ -362,15 +365,17 @@ function startFireworksBgm() {
         return;
     }
 
-    const fireworksAudio = getFireworksBgm();
-
     fireworksBgmStarted = true;
 
-    fireworksAudio.volume = 0.22;
+    // 正式進入煙火段：從頭開始並解除靜音
+    fireworksBgm.currentTime = 0;
+    fireworksBgm.muted = false;
+
+    fireworksBgm.volume = 0.22;
 
 
     const playPromise =
-        fireworksAudio.play();
+        fireworksBgm.play();
 
 
     if (
@@ -551,7 +556,7 @@ function startFullBirthdayCard() {
        ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
        此時不會出聲。
     */
-    // 第三段 BGM 到煙火段時才建立
+    unlockFireworksBgm();
 
     document.body.classList.remove(
         "site-not-started"
