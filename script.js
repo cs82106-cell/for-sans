@@ -98,12 +98,15 @@ let npcBgmFadeTimer = null;
    生日煙火真正開始前淡出停止
 ========================================================= */
 
-const blessingBgm =
-    new Audio(
-        "assets/audio/幾分之幾.mp3"
-    );
+let blessingBgm = null;
 
-blessingBgm.loop = true;
+function getBlessingBgm() {
+
+    if (!blessingBgm) {
+        blessingBgm = new Audio(
+            "assets/audio/幾分之幾.mp3"
+        );
+        blessingBgm.loop = true;
 
 /*
    ★ 第二段背景音量
@@ -112,9 +115,13 @@ blessingBgm.loop = true;
    如果之後覺得人聲太大，
    可以改成 0.15～0.18。
 */
-blessingBgm.volume = 0.20;
 
-blessingBgm.preload = "auto";
+        blessingBgm.volume = 0.20;
+        blessingBgm.preload = "metadata";
+    }
+
+    return blessingBgm;
+}
 
 
 let blessingBgmStarted = false;
@@ -155,11 +162,8 @@ const blessingStarTailDuration = 4200;
 ========================================================= */
 
 function unlockBlessingBgm() {
-
-    // iPhone / Safari：
-    // 開場完全不碰第二段音樂，避免重新整理或重開時偷唱。
+    // 開場不建立、不播放第二段 BGM。
     blessingBgmUnlocked = true;
-
 }
 
 
@@ -173,6 +177,8 @@ function startBlessingBgm() {
         return;
     }
 
+    const blessingAudio = getBlessingBgm();
+
     blessingBgmStarted = true;
 
     /*
@@ -180,11 +186,11 @@ function startBlessingBgm() {
          播放時直接使用第二段設定音量 20%。
     */
 
-    blessingBgm.volume = 0.20;
+    blessingAudio.volume = 0.20;
 
 
     const playPromise =
-        blessingBgm.play();
+        blessingAudio.play();
 
 
     if (
@@ -277,9 +283,9 @@ function fadeOutBlessingBgm(
 
                 blessingBgmFadeTimer = null;
 
-                blessingBgm.pause();
+                if (blessingBgm) blessingBgm.pause();
 
-                blessingBgm.currentTime = 0;
+                if (blessingBgm) blessingBgm.currentTime = 0;
 
                 blessingBgm.volume = 0.20;
 
@@ -303,20 +309,27 @@ function fadeOutBlessingBgm(
      只要改這一行路徑即可。
 ========================================================= */
 
-const fireworksBgm =
-    new Audio(
-        "assets/audio/HBD.mp3"
-    );
+let fireworksBgm = null;
 
-fireworksBgm.loop = true;
+function getFireworksBgm() {
+
+    if (!fireworksBgm) {
+        fireworksBgm = new Audio(
+            "assets/audio/HBD.mp3"
+        );
+        fireworksBgm.loop = true;
 
 /*
    ★ 第三段背景音量
    0.22 = 22%
 */
-fireworksBgm.volume = 0.22;
 
-fireworksBgm.preload = "auto";
+        fireworksBgm.volume = 0.22;
+        fireworksBgm.preload = "metadata";
+    }
+
+    return fireworksBgm;
+}
 
 
 let fireworksBgmStarted = false;
@@ -334,11 +347,8 @@ let fireworksBgmUnlocked = false;
 ========================================================= */
 
 function unlockFireworksBgm() {
-
-    // iPhone / Safari：
-    // 開場完全不碰第三段音樂，避免重新整理或重開時偷唱。
+    // 開場不建立、不播放第三段 BGM。
     fireworksBgmUnlocked = true;
-
 }
 
 
@@ -352,13 +362,15 @@ function startFireworksBgm() {
         return;
     }
 
+    const fireworksAudio = getFireworksBgm();
+
     fireworksBgmStarted = true;
 
-    fireworksBgm.volume = 0.22;
+    fireworksAudio.volume = 0.22;
 
 
     const playPromise =
-        fireworksBgm.play();
+        fireworksAudio.play();
 
 
     if (
@@ -530,30 +542,16 @@ function startFullBirthdayCard() {
     entryStarted = true;
 
     /*
-       ★ 每次重新進入卡片時先強制清掉第二、三段音樂狀態。
-       避免 iPhone Safari 在重新整理 / 回復頁面時延續媒體狀態。
-    */
-    blessingBgm.pause();
-    blessingBgm.currentTime = 0;
-    blessingBgm.volume = 0.20;
-    blessingBgmStarted = false;
-
-    fireworksBgm.pause();
-    fireworksBgm.currentTime = 0;
-    fireworksBgm.volume = 0.22;
-    fireworksBgmStarted = false;
-
-    /*
        ★ 最初點擊時先解鎖第二段「幾分之幾」。
        不會提前出聲。
     */
-    // 第二段 BGM 不在開場預播放
+    // 第二段 BGM 到星空祝福時才建立
 
     /*
        ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
        此時不會出聲。
     */
-    // 第三段 BGM 不在開場預播放
+    // 第三段 BGM 到煙火段時才建立
 
     document.body.classList.remove(
         "site-not-started"
@@ -7245,29 +7243,3 @@ async function playBlessingOpening() {
     await playBlackScreenTransition();
 
 }
-
-/* =========================================================
-   ★ iPhone Safari：離開 / 重新整理頁面時強制停止所有 BGM
-========================================================= */
-
-function stopAllBirthdayBgm() {
-
-    [npcBgm, blessingBgm, fireworksBgm].forEach(audio => {
-
-        try {
-            audio.pause();
-            audio.currentTime = 0;
-        } catch (error) {
-            // 忽略頁面卸載期間的媒體狀態錯誤
-        }
-
-    });
-
-    npcBgmStarted = false;
-    blessingBgmStarted = false;
-    fireworksBgmStarted = false;
-}
-
-window.addEventListener("pagehide", stopAllBirthdayBgm);
-window.addEventListener("beforeunload", stopAllBirthdayBgm);
-
