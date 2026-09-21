@@ -156,6 +156,8 @@ const blessingStarTailDuration = 4200;
 
 function unlockBlessingBgm() {
 
+    // iPhone / Safari：
+    // 開場完全不碰第二段音樂，避免重新整理或重開時偷唱。
     blessingBgmUnlocked = true;
 
 }
@@ -333,6 +335,8 @@ let fireworksBgmUnlocked = false;
 
 function unlockFireworksBgm() {
 
+    // iPhone / Safari：
+    // 開場完全不碰第三段音樂，避免重新整理或重開時偷唱。
     fireworksBgmUnlocked = true;
 
 }
@@ -524,6 +528,32 @@ function startFullBirthdayCard() {
     }
 
     entryStarted = true;
+
+    /*
+       ★ 每次重新進入卡片時先強制清掉第二、三段音樂狀態。
+       避免 iPhone Safari 在重新整理 / 回復頁面時延續媒體狀態。
+    */
+    blessingBgm.pause();
+    blessingBgm.currentTime = 0;
+    blessingBgm.volume = 0.20;
+    blessingBgmStarted = false;
+
+    fireworksBgm.pause();
+    fireworksBgm.currentTime = 0;
+    fireworksBgm.volume = 0.22;
+    fireworksBgmStarted = false;
+
+    /*
+       ★ 最初點擊時先解鎖第二段「幾分之幾」。
+       不會提前出聲。
+    */
+    // 第二段 BGM 不在開場預播放
+
+    /*
+       ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
+       此時不會出聲。
+    */
+    // 第三段 BGM 不在開場預播放
 
     document.body.classList.remove(
         "site-not-started"
@@ -7215,3 +7245,29 @@ async function playBlessingOpening() {
     await playBlackScreenTransition();
 
 }
+
+/* =========================================================
+   ★ iPhone Safari：離開 / 重新整理頁面時強制停止所有 BGM
+========================================================= */
+
+function stopAllBirthdayBgm() {
+
+    [npcBgm, blessingBgm, fireworksBgm].forEach(audio => {
+
+        try {
+            audio.pause();
+            audio.currentTime = 0;
+        } catch (error) {
+            // 忽略頁面卸載期間的媒體狀態錯誤
+        }
+
+    });
+
+    npcBgmStarted = false;
+    blessingBgmStarted = false;
+    fireworksBgmStarted = false;
+}
+
+window.addEventListener("pagehide", stopAllBirthdayBgm);
+window.addEventListener("beforeunload", stopAllBirthdayBgm);
+
