@@ -156,51 +156,9 @@ const blessingStarTailDuration = 4200;
 
 function unlockBlessingBgm() {
 
-    if (blessingBgmUnlocked) {
-        return;
-    }
-
-
-    const oldVolume =
-        blessingBgm.volume;
-
-    blessingBgm.volume = 0;
-
-
-    const playPromise =
-        blessingBgm.play();
-
-
-    if (
-        playPromise !== undefined
-    ) {
-
-        playPromise
-            .then(() => {
-
-                blessingBgm.pause();
-
-                blessingBgm.currentTime = 0;
-
-                blessingBgm.volume =
-                    oldVolume;
-
-                blessingBgmUnlocked = true;
-
-            })
-            .catch(error => {
-
-                blessingBgm.volume =
-                    oldVolume;
-
-                console.log(
-                    "第二段 BGM 預先解鎖失敗：",
-                    error
-                );
-
-            });
-
-    }
+    // iPhone Safari 不在開場預播放「幾分之幾」
+    // 避免開場時音樂偷跑
+    blessingBgmUnlocked = true;
 
 }
 
