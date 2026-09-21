@@ -377,51 +377,9 @@ let fireworksBgmUnlocked = false;
 
 function unlockFireworksBgm() {
 
-    if (fireworksBgmUnlocked) {
-        return;
-    }
-
-
-    const oldVolume =
-        fireworksBgm.volume;
-
-    fireworksBgm.volume = 0;
-
-
-    const playPromise =
-        fireworksBgm.play();
-
-
-    if (
-        playPromise !== undefined
-    ) {
-
-        playPromise
-            .then(() => {
-
-                fireworksBgm.pause();
-
-                fireworksBgm.currentTime = 0;
-
-                fireworksBgm.volume =
-                    oldVolume;
-
-                fireworksBgmUnlocked = true;
-
-            })
-            .catch(error => {
-
-                fireworksBgm.volume =
-                    oldVolume;
-
-                console.log(
-                    "第三段 HBD BGM 預先解鎖失敗：",
-                    error
-                );
-
-            });
-
-    }
+    // iPhone Safari 不在開場預播放 HBD
+    // 避免生日快樂音樂在開頭偷跑
+    fireworksBgmUnlocked = true;
 
 }
 
