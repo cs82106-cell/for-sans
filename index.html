@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Sans Birthday</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body class="site-not-started">
+
+
+
+    <!-- =================================================
+         進入畫面
+
+         ★ 使用者點擊後：
+           1. 解鎖瀏覽器音訊播放
+           2. NPC 與 BGM 同時開始
+           3. 此畫面淡出
+    ================================================== -->
+
+    <button
+        class="entry-screen"
+        id="entry-screen"
+        type="button"
+        aria-label="開啟 Sans 生日卡片"
+    >
+        <span class="entry-title">
+            FOR SANS
+        </span>
+
+        <span class="entry-hint">
+            點擊開啟
+        </span>
+    </button>
+
+
+    <main class="birthday-stage">
+
+
+        <!-- =================================================
+             開場 NPC 場景
+        ================================================== -->
+
+        <div
+            class="npc-scene"
+            id="npc-scene"
+        >
+
+
+            <!-- =========================
+                 開場對話框
+            ========================== -->
+
+            <div
+                class="dialog-box"
+                id="dialog-box"
+            >
+
+                <p id="dialog-text"></p>
+
+
+                <span
+                    class="next-icon"
+                    id="next-hint"
+                >
+                    點擊繼續 ▼
+                </span>
+
+            </div>
+
+
+            <!-- =========================
+                 開場 NPC
+            ========================== -->
+
+            <img
+                class="npc"
+                id="npc"
+                src="assets/images/NPC.png"
+                alt="生日小貓 NPC"
+            >
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             問卷場景
+        ================================================== -->
+
+        <section
+            class="question-scene"
+            id="question-scene"
+            aria-hidden="true"
+        >
+
+
+            <!-- =================================================
+                 問卷紙張
+            ================================================== -->
+
+            <div
+                class="question-paper"
+                id="question-paper"
+            >
+
+
+                <!-- =========================
+                     QUESTION / 題號
+                ========================== -->
+
+                <header class="question-header">
+
+                    <div class="question-label">
+                        QUESTION
+                    </div>
+
+
+                    <div
+                        class="question-number"
+                        id="question-number"
+                    >
+                        01 / 05
+                    </div>
+
+                </header>
+
+
+
+                <!-- =========================
+                     題目文字
+                ========================== -->
+
+                <h1
+                    class="question-title"
+                    id="question-title"
+                ></h1>
+
+
+
+                <!-- =================================================
+                     Q1 ～ Q3
+                     A / B / C / D
+                ================================================== -->
+
+                <div
+                    class="answer-options"
+                    id="answer-options"
+                    hidden
+                ></div>
+
+
+
+                <!-- =================================================
+                     Q4
+                     能 / 不能
+                ================================================== -->
+
+                <div
+                    class="yes-no-area"
+                    id="yes-no-area"
+                    hidden
+                >
+
+
+                    <button
+                        class="yes-no-button yes-button"
+                        id="yes-button"
+                        type="button"
+                    >
+                        能
+                    </button>
+
+
+                    <button
+                        class="yes-no-button no-button"
+                        id="no-button"
+                        type="button"
+                    >
+                        不能
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                     Q5
+                     自由填寫生日祝福
+                ================================================== -->
+
+                <div
+                    class="text-answer-area"
+                    id="text-answer-area"
+                    hidden
+                >
+
+
+                    <textarea
+                        class="wish-input"
+                        id="wish-input"
+                        rows="4"
+                        maxlength="300"
+                        placeholder="寫下你今年最想實現的願望……"
+                    ></textarea>
+
+
+                    <button
+                        class="submit-wish-button"
+                        id="submit-wish-button"
+                        type="button"
+                    >
+                        寫好了
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                     NPC 評語區
+                ================================================== -->
+
+                <div
+                    class="question-comment"
+                    id="question-comment"
+                    hidden
+                >
+
+
+                    <!-- =========================
+                         評語 NPC
+                    ========================== -->
+
+                    <img
+                        class="comment-npc"
+                        id="comment-npc"
+                        src="assets/images/NPC-teacher.png"
+                        alt="評語老師 NPC"
+                    >
+
+
+
+                    <!-- =========================
+                         評語泡泡
+                    ========================== -->
+
+                    <div class="comment-bubble">
+
+
+                        <p
+                            class="comment-text"
+                            id="comment-text"
+                        ></p>
+
+
+
+                        <!-- =========================
+                             左下角：重新選擇
+                        ========================== -->
+
+                        <button
+                            class="comment-retry-button"
+                            id="comment-retry-button"
+                            type="button"
+                            hidden
+                        >
+                            ↺ 重新選擇
+                        </button>
+
+
+
+                        <!-- =========================
+                             右下角：繼續
+                        ========================== -->
+
+                        <button
+                            class="comment-next-button"
+                            id="comment-next-button"
+                            type="button"
+                        >
+                            點擊繼續 ▼
+                        </button>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             問答完成後 NPC 轉場
+        ================================================== -->
+
+        <section
+            class="transition-scene"
+            id="transition-scene"
+            aria-hidden="true"
+        >
+
+
+            <!-- =========================
+                 轉場對話框
+            ========================== -->
+
+            <div
+                class="transition-dialog"
+                id="transition-dialog"
+            >
+
+
+                <p
+                    class="transition-dialog-text"
+                    id="transition-dialog-text"
+                ></p>
+
+
+                <span
+                    class="transition-next-icon"
+                    id="transition-next-hint"
+                >
+                    點擊繼續 ▼
+                </span>
+
+
+            </div>
+
+
+
+            <!-- =========================
+                 轉場 NPC
+
+                 JavaScript 會依台詞切換：
+
+                 NPC_relief.png
+                 NPC_reading.png
+                 NPC_flipping.png
+                 NPC_shocked.png
+                 NPC_look.png
+                 NPC_awkward.png
+            ========================== -->
+
+            <img
+                class="transition-npc"
+                id="transition-npc"
+                src="assets/images/NPC_relief.png"
+                alt="生日小貓 NPC"
+            >
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             正式生日祝福篇
+
+             NPC：
+             「接下來，交給她自己說吧。」
+
+             ↓
+
+             NPC 淡出
+
+             ↓
+
+             星空出現
+
+             ↓
+
+             script.js 自動播放祝福文字
+        ================================================== -->
+
+        <section
+            class="blessing-scene"
+            id="blessing-scene"
+            aria-hidden="true"
+        >
+
+
+            <!-- =================================================
+                 祝福文字舞台
+
+                 注意：
+                 這個容器本身不負責淡入淡出。
+
+                 真正淡入淡出的是下面的：
+                 #blessing-opening-text
+            ================================================== -->
+
+            <div
+                class="blessing-opening"
+                id="blessing-opening"
+            >
+
+
+                <!-- =================================================
+                     祝福文字
+
+                     ★ HTML 不放固定內容
+
+                     script.js 的 blessingLines
+                     會依序把文字放進這裡。
+
+                     JavaScript 會控制：
+
+                     文字內容
+                     ↓
+                     show-text
+                     ↓
+                     淡入
+                     ↓
+                     stay 停留
+                     ↓
+                     fade-out
+                     ↓
+                     淡出
+                     ↓
+                     下一段
+                ================================================== -->
+
+                <p
+                    class="blessing-opening-text"
+                    id="blessing-opening-text"
+                    aria-live="polite"
+                ></p>
+
+
+            </div>
+
+
+        </section>
+
+
+
+    </main>
+
+
+
+    <!-- =================================================
+         JavaScript
+
+         放在 body 最後，
+         確保 HTML 元素建立完成後再執行。
+    ================================================== -->
+
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>

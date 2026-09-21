@@ -1,0 +1,2503 @@
+/* =========================================================
+   全域基本設定
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+
+    overflow: hidden;
+
+    font-family:
+        "Microsoft JhengHei",
+        "Noto Sans TC",
+        sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fff1f6,
+            #f7eaff
+        );
+
+    color: #4f4456;
+}
+
+button,
+textarea {
+    font-family: inherit;
+}
+
+
+/* =========================================================
+   進入畫面
+
+   ★ 這個畫面不是單純裝飾。
+     使用者點擊它後，瀏覽器才允許播放有聲 BGM。
+
+   ★ 在點擊之前，NPC 動畫會停在第一幀，
+     不會偷偷在黑幕後方走完。
+========================================================= */
+
+.entry-screen {
+    position: fixed;
+
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 20px;
+
+    width: 100%;
+    height: 100%;
+
+    border: none;
+    outline: none;
+
+    background:
+        radial-gradient(
+            circle at 50% 42%,
+            #1b1b27 0%,
+            #0e0e16 45%,
+            #050508 100%
+        );
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    z-index: 9999;
+
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+        opacity 0.8s ease,
+        visibility 0.8s ease;
+}
+
+.entry-screen::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255, 255, 255, 0.035),
+            transparent 58%
+        );
+
+    pointer-events: none;
+}
+
+.entry-screen.hide {
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+}
+
+.entry-title {
+    position: relative;
+
+    z-index: 1;
+
+    font-size:
+        clamp(
+            42px,
+            6vw,
+            82px
+        );
+
+    font-weight: 500;
+
+    letter-spacing: 0.18em;
+
+    line-height: 1;
+
+    text-indent: 0.18em;
+
+    text-shadow:
+        0 0 28px
+        rgba(255, 255, 255, 0.08);
+
+    user-select: none;
+}
+
+.entry-hint {
+    position: relative;
+
+    z-index: 1;
+
+    margin-top: 14px;
+
+    padding:
+        13px
+        28px;
+
+    min-width: 150px;
+
+    font-size:
+        clamp(
+            15px,
+            1.5vw,
+            18px
+        );
+
+    font-weight: 400;
+
+    letter-spacing: 0.16em;
+
+    text-indent: 0.16em;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.88
+        );
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.38
+        );
+
+    border-radius: 16px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.05
+        );
+
+    backdrop-filter:
+        blur(4px);
+
+    transition:
+        transform 0.25s ease,
+        background 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+
+    animation:
+        entryHintPulse
+        2.2s
+        ease-in-out
+        infinite;
+
+    user-select: none;
+}
+
+.entry-screen:hover .entry-hint {
+
+    transform:
+        translateY(-2px);
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.09
+        );
+
+    border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.62
+        );
+
+    box-shadow:
+        0 8px 24px
+        rgba(
+            0,
+            0,
+            0,
+            0.22
+        );
+}
+
+
+@keyframes entryHintPulse {
+
+    0%,
+    100% {
+        opacity: 0.72;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+}
+
+
+/* =========================================================
+   尚未點擊「點擊開啟」前：
+   NPC 動畫完全暫停
+========================================================= */
+
+.site-not-started .npc {
+    animation-play-state: paused;
+}
+
+
+/* =========================================================
+   手機版進入畫面
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .entry-screen {
+        gap: 17px;
+    }
+
+    .entry-title {
+        font-size:
+            clamp(
+                38px,
+                12vw,
+                58px
+            );
+
+        letter-spacing: 0.14em;
+
+        text-indent: 0.14em;
+    }
+
+    .entry-hint {
+        font-size: 13px;
+
+        letter-spacing: 0.18em;
+
+        text-indent: 0.18em;
+    }
+
+}
+
+
+
+/* =========================================================
+   hidden
+========================================================= */
+
+[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
+   整個生日舞台
+========================================================= */
+
+.birthday-stage {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   NPC 開場場景
+========================================================= */
+
+.npc-scene {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    z-index: 2;
+}
+
+
+/* =========================================================
+   開場 NPC
+========================================================= */
+
+.npc {
+    position: absolute;
+
+    width: 230px;
+    height: auto;
+
+    top: 55%;
+    left: 50%;
+
+    animation:
+        npcWalkIn
+        5s
+        linear
+        forwards;
+
+    z-index: 3;
+}
+
+
+/* =========================================================
+   NPC 從右邊走進來
+========================================================= */
+
+@keyframes npcWalkIn {
+
+    0% {
+        transform:
+            translate(75vw, -50%)
+            translateY(0)
+            rotate(0deg);
+    }
+
+    10% {
+        transform:
+            translate(62vw, -50%)
+            translateY(-5px)
+            rotate(-2deg);
+    }
+
+    20% {
+        transform:
+            translate(49vw, -50%)
+            translateY(0)
+            rotate(2deg);
+    }
+
+    30% {
+        transform:
+            translate(36vw, -50%)
+            translateY(-5px)
+            rotate(-2deg);
+    }
+
+    40% {
+        transform:
+            translate(23vw, -50%)
+            translateY(0)
+            rotate(2deg);
+    }
+
+    50% {
+        transform:
+            translate(10vw, -50%)
+            translateY(-5px)
+            rotate(-2deg);
+    }
+
+    60% {
+        transform:
+            translate(-3vw, -50%)
+            translateY(0)
+            rotate(2deg);
+    }
+
+    70% {
+        transform:
+            translate(-16vw, -50%)
+            translateY(-5px)
+            rotate(-2deg);
+    }
+
+    80% {
+        transform:
+            translate(-26vw, -50%)
+            translateY(0)
+            rotate(2deg);
+    }
+
+    90% {
+        transform:
+            translate(-32vw, -50%)
+            translateY(-3px)
+            rotate(-1deg);
+    }
+
+    100% {
+        transform:
+            translate(-35vw, -50%)
+            translateY(0)
+            rotate(0deg);
+    }
+}
+
+
+/* =========================================================
+   開場對話框
+========================================================= */
+
+.dialog-box {
+    position: absolute;
+
+    left: 50%;
+    top: 35%;
+
+    transform:
+        translateX(-50%)
+        translateY(15px)
+        scale(0.96);
+
+    width: min(620px, 80vw);
+
+    min-height: 130px;
+
+    padding:
+        30px
+        55px
+        30px
+        38px;
+
+    background:
+        rgba(255, 255, 255, 0.96);
+
+    border:
+        3px solid white;
+
+    border-radius: 25px;
+
+    box-shadow:
+        0 15px 40px
+        rgba(80, 40, 100, 0.15);
+
+    font-size: 24px;
+
+    line-height: 1.7;
+
+    opacity: 0;
+    visibility: hidden;
+
+    cursor: pointer;
+
+    z-index: 4;
+}
+
+
+/* =========================================================
+   開場對話框出現
+========================================================= */
+
+.dialog-box.show {
+    visibility: visible;
+
+    animation:
+        dialogEnter
+        0.5s
+        ease-out
+        forwards;
+}
+
+@keyframes dialogEnter {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(15px)
+            scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+}
+
+
+/* =========================================================
+   開場對話框離場
+========================================================= */
+
+.dialog-box.hide {
+    pointer-events: none;
+
+    animation:
+        dialogLeave
+        0.45s
+        ease
+        forwards;
+}
+
+@keyframes dialogLeave {
+
+    from {
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+
+    to {
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(-10px)
+            scale(0.97);
+
+        visibility: hidden;
+    }
+}
+
+
+/* =========================================================
+   點擊繼續提示
+========================================================= */
+
+.next-icon {
+    position: absolute;
+
+    right: 22px;
+    bottom: 15px;
+
+    font-size: 14px;
+
+    color: #888;
+
+    opacity: 0;
+
+    transition:
+        opacity
+        0.3s
+        ease;
+
+    pointer-events: none;
+}
+
+.next-icon.show {
+    opacity: 1;
+
+    animation:
+        arrowMove
+        0.7s
+        infinite
+        alternate;
+}
+
+@keyframes arrowMove {
+
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(5px);
+    }
+}
+
+
+/* =========================================================
+   問卷場景
+========================================================= */
+
+.question-scene {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 10;
+}
+
+.question-scene.show {
+    opacity: 1;
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+
+/* =========================================================
+   問卷背景柔光
+========================================================= */
+
+.question-scene::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(250, 239, 250, 0.34);
+
+    backdrop-filter:
+        blur(2px);
+
+    opacity: 0;
+
+    transition:
+        opacity
+        0.5s
+        ease;
+}
+
+.question-scene.show::before {
+    opacity: 1;
+}
+
+
+/* =========================================================
+   問卷紙張
+========================================================= */
+
+.question-paper {
+    position: relative;
+
+    width: min(760px, 88vw);
+
+    min-height: 560px;
+
+    padding:
+        45px
+        55px
+        48px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(255, 251, 255, 0.98)
+        );
+
+    border:
+        3px solid
+        rgba(255, 255, 255, 0.95);
+
+    border-radius: 30px;
+
+    box-shadow:
+        0 24px 70px
+        rgba(81, 45, 95, 0.18);
+
+    opacity: 0;
+
+    transform:
+        translate(-33vw, 20vh)
+        scale(0.10)
+        rotate(-8deg);
+
+    transform-origin:
+        center center;
+
+    z-index: 2;
+}
+
+
+/* =========================================================
+   紙張飛入
+========================================================= */
+
+.question-paper.fly-in {
+    animation:
+        paperFlyIn
+        1.15s
+        cubic-bezier(
+            0.18,
+            0.75,
+            0.25,
+            1.15
+        )
+        forwards;
+}
+
+@keyframes paperFlyIn {
+
+    0% {
+        opacity: 0;
+
+        transform:
+            translate(-33vw, 20vh)
+            scale(0.10)
+            rotate(-8deg);
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    70% {
+        transform:
+            translate(2vw, -2vh)
+            scale(1.04)
+            rotate(1.5deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            translate(0, 0)
+            scale(1)
+            rotate(0deg);
+    }
+}
+
+
+/* =========================================================
+   問卷收起
+========================================================= */
+
+.question-paper.fold-away {
+    animation:
+        paperFoldAway
+        0.9s
+        ease-in
+        forwards;
+}
+
+@keyframes paperFoldAway {
+
+    0% {
+        opacity: 1;
+
+        transform:
+            translate(0, 0)
+            scale(1)
+            rotate(0deg);
+    }
+
+    35% {
+        transform:
+            translate(0, 8px)
+            scale(0.96)
+            rotate(-1deg);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform:
+            translate(0, 40px)
+            scale(0.08)
+            rotate(8deg);
+    }
+}
+
+
+/* =========================================================
+   QUESTION 題號
+========================================================= */
+
+.question-header {
+    text-align: center;
+
+    margin-bottom: 34px;
+}
+
+.question-label {
+    font-size: 14px;
+
+    letter-spacing: 0.25em;
+
+    color: #b49bb8;
+
+    margin-bottom: 7px;
+}
+
+.question-number {
+    font-size: 24px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.08em;
+
+    color: #6f5777;
+}
+
+
+/* =========================================================
+   題目文字
+========================================================= */
+
+.question-title {
+    max-width: 620px;
+
+    margin:
+        0 auto
+        34px;
+
+    text-align: center;
+
+    font-size: 27px;
+
+    line-height: 1.55;
+
+    font-weight: 700;
+
+    color: #504454;
+}
+
+
+/* =========================================================
+   Q4 主標題
+========================================================= */
+
+.question-main-text {
+    display: block;
+
+    font-size: inherit;
+
+    font-weight: 700;
+
+    line-height: 1.55;
+
+    color: inherit;
+}
+
+
+/* =========================================================
+   Q4 小字
+========================================================= */
+
+.question-title .question-subtitle {
+    display: block;
+
+    margin-top: 10px;
+
+    font-size: 14px;
+
+    font-weight: 400;
+
+    line-height: 1.5;
+
+    color: #a99cab;
+
+    letter-spacing: 0.03em;
+}
+
+
+/* =========================================================
+   Q1 ～ Q3 選項區
+========================================================= */
+
+.answer-options {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr;
+
+    gap: 18px;
+
+    width: 100%;
+
+    margin-top: 10px;
+}
+
+
+/* =========================================================
+   四選一按鈕
+========================================================= */
+
+.answer-button {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    width: 100%;
+
+    min-height: 72px;
+
+    padding:
+        15px
+        20px;
+
+    border:
+        2px solid
+        rgba(211, 184, 218, 0.6);
+
+    border-radius: 18px;
+
+    background:
+        rgba(255, 255, 255, 0.88);
+
+    box-shadow:
+        0 7px 18px
+        rgba(108, 77, 117, 0.08);
+
+    color: #574d5c;
+
+    font-size: 17px;
+
+    text-align: left;
+
+    line-height: 1.45;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+
+/* =========================================================
+   A B C D
+========================================================= */
+
+.answer-letter {
+    flex-shrink: 0;
+
+    display: inline-flex;
+
+    justify-content: center;
+    align-items: center;
+
+    width: 35px;
+    height: 35px;
+
+    margin-right: 13px;
+
+    border-radius: 50%;
+
+    background: #f3e8f6;
+
+    color: #806588;
+
+    font-weight: 700;
+}
+
+.answer-button:hover {
+    transform:
+        translateY(-3px)
+        scale(1.015);
+
+    border-color:
+        rgba(192, 148, 203, 0.95);
+
+    box-shadow:
+        0 11px 24px
+        rgba(108, 77, 117, 0.13);
+
+    background: #ffffff;
+}
+
+.answer-button.selected {
+    transform:
+        scale(1.025);
+
+    border-color: #c793d3;
+
+    background: #f7ebfa;
+
+    box-shadow:
+        0 10px 25px
+        rgba(117, 76, 128, 0.14);
+}
+
+.answer-button.faded {
+    opacity: 0.35;
+
+    transform:
+        scale(0.98);
+
+    pointer-events: none;
+}
+
+.answer-options.locked .answer-button {
+    cursor: default;
+}
+
+
+/* =========================================================
+   Q4 能 / 不能
+========================================================= */
+
+.yes-no-area {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 70px;
+
+    min-height: 160px;
+
+    margin-top: 10px;
+}
+
+.yes-no-button {
+    min-width: 150px;
+
+    padding:
+        18px
+        38px;
+
+    border: none;
+
+    border-radius: 999px;
+
+    font-size: 24px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 9px 22px
+        rgba(92, 61, 103, 0.12);
+
+    transition:
+        transform
+        0.28s
+        cubic-bezier(
+            0.34,
+            1.56,
+            0.64,
+            1
+        ),
+        opacity
+        0.2s
+        ease,
+        box-shadow
+        0.2s
+        ease;
+}
+
+.yes-button {
+    background:
+        linear-gradient(
+            135deg,
+            #f3d9f6,
+            #e7c6ed
+        );
+
+    color: #684d70;
+}
+
+.yes-button:hover {
+    transform:
+        scale(1.08);
+
+    box-shadow:
+        0 12px 28px
+        rgba(92, 61, 103, 0.17);
+}
+
+.no-button {
+    background: #f3f0f4;
+
+    color: #827987;
+}
+
+.yes-no-area.teasing .yes-button {
+    transform:
+        scale(1.45);
+}
+
+.yes-no-area.teasing .no-button {
+    transform:
+        scale(0.34);
+
+    opacity: 0.7;
+}
+
+.no-button.caught {
+    animation:
+        caughtShake
+        0.45s
+        ease;
+}
+
+@keyframes caughtShake {
+
+    0% {
+        transform:
+            scale(0.34)
+            translateX(0);
+    }
+
+    25% {
+        transform:
+            scale(0.34)
+            translateX(-10px);
+    }
+
+    50% {
+        transform:
+            scale(0.34)
+            translateX(10px);
+    }
+
+    75% {
+        transform:
+            scale(0.34)
+            translateX(-6px);
+    }
+
+    100% {
+        transform:
+            scale(0.34)
+            translateX(0);
+    }
+}
+
+
+/* =========================================================
+   Q5 填寫區
+========================================================= */
+
+.text-answer-area {
+    width:
+        min(
+            560px,
+            100%
+        );
+
+    margin:
+        0 auto;
+
+    text-align: center;
+
+    transform:
+        translateY(-30px);
+}
+
+.wish-input {
+    display: block;
+
+    width: 100%;
+
+    min-height: 135px;
+
+    padding:
+        18px
+        20px;
+
+    resize: none;
+
+    border:
+        2px solid
+        #e4d3e8;
+
+    border-radius: 18px;
+
+    outline: none;
+
+    background:
+        rgba(255, 255, 255, 0.88);
+
+    box-shadow:
+        inset
+        0 2px 8px
+        rgba(75, 49, 85, 0.04);
+
+    color: #544a58;
+
+    font-size: 18px;
+
+    line-height: 1.6;
+
+    transition:
+        border-color
+        0.2s
+        ease,
+        box-shadow
+        0.2s
+        ease;
+}
+
+.wish-input::placeholder {
+    color: #aaa0ad;
+}
+
+.wish-input:focus {
+    border-color: #c99ed2;
+
+    box-shadow:
+        0 0 0
+        4px
+        rgba(201, 158, 210, 0.13);
+}
+
+.submit-wish-button {
+    margin-top: 22px;
+
+    padding:
+        14px
+        38px;
+
+    border: none;
+
+    border-radius: 999px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #e8c7ed,
+            #d7b2df
+        );
+
+    color: #604a67;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 18px
+        rgba(95, 61, 105, 0.12);
+
+    transition:
+        transform
+        0.2s
+        ease,
+        box-shadow
+        0.2s
+        ease;
+}
+
+.submit-wish-button:hover {
+    transform:
+        translateY(-2px)
+        scale(1.03);
+
+    box-shadow:
+        0 11px 23px
+        rgba(95, 61, 105, 0.16);
+}
+
+.wish-input.invalid {
+    animation:
+        inputShake
+        0.35s
+        ease;
+
+    border-color: #d7a8b6;
+}
+
+@keyframes inputShake {
+
+    0%,
+    100% {
+        transform:
+            translateX(0);
+    }
+
+    25% {
+        transform:
+            translateX(-7px);
+    }
+
+    75% {
+        transform:
+            translateX(7px);
+    }
+}
+
+
+/* =========================================================
+   NPC 評語
+========================================================= */
+
+.question-comment {
+    position: absolute;
+
+    left: 50%;
+    bottom: 45px;
+
+    width:
+        min(
+            620px,
+            90%
+        );
+
+    transform:
+        translateX(-50%)
+        translateY(25px);
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 12px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    z-index: 5;
+}
+
+.question-comment.show {
+    animation:
+        commentEnter
+        0.4s
+        ease
+        forwards;
+
+    pointer-events: auto;
+}
+
+@keyframes commentEnter {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0);
+    }
+}
+
+.comment-npc {
+    width: 115px;
+
+    height: auto;
+
+    flex-shrink: 0;
+
+    transform:
+        translateX(0)
+        translateY(8px);
+
+    filter:
+        drop-shadow(
+            0 6px 8px
+            rgba(67, 45, 72, 0.1)
+        );
+}
+
+.comment-bubble {
+    position: relative;
+
+    flex: 1;
+
+    min-height: 100px;
+
+    padding:
+        18px
+        24px
+        52px
+        24px;
+
+    border:
+        2px solid
+        #eadced;
+
+    border-radius: 20px;
+
+    background:
+        rgba(255, 255, 255, 0.97);
+
+    box-shadow:
+        0 12px 28px
+        rgba(89, 60, 99, 0.12);
+}
+
+.comment-text {
+    font-size: 17px;
+
+    line-height: 1.55;
+
+    color: #5d5361;
+}
+
+.comment-retry-button {
+    position: absolute;
+
+    left: 10px;
+    bottom: 7px;
+
+    padding:
+        9px
+        12px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #aaa0ad;
+
+    font-size: 13px;
+
+    font-weight: 400;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.comment-retry-button:hover {
+    color: #766c7b;
+
+    background:
+        rgba(244, 235, 247, 0.75);
+
+    transform:
+        translateY(-1px);
+}
+
+.comment-retry-button:active {
+    transform:
+        translateY(1px);
+}
+
+.comment-retry-button:disabled {
+    pointer-events: none;
+
+    opacity: 0.45;
+}
+
+.comment-next-button {
+    position: absolute;
+
+    right: 10px;
+    bottom: 7px;
+
+    padding:
+        9px
+        12px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #918897;
+
+    font-size: 13px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease;
+
+    animation:
+        commentArrowMove
+        0.7s
+        infinite
+        alternate;
+}
+
+.comment-next-button:hover {
+    color: #6f6574;
+
+    background:
+        rgba(244, 235, 247, 0.75);
+}
+
+.comment-next-button:disabled {
+    pointer-events: none;
+
+    opacity: 0.45;
+}
+
+@keyframes commentArrowMove {
+
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(4px);
+    }
+}
+
+
+/* =========================================================
+   生日祝福轉場
+========================================================= */
+
+.transition-scene {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 20;
+
+    transition:
+        opacity
+        0.6s
+        ease;
+}
+
+.transition-scene.show {
+    opacity: 1;
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+
+/* =========================================================
+   轉場 NPC
+
+   ★ 妳目前的位置保留
+========================================================= */
+
+.transition-npc {
+    position: absolute;
+
+    width: 230px;
+    height: auto;
+
+    top: 45%;
+    left: 20%;
+
+    transform:
+        translate(-50%, -50%);
+
+    opacity: 0;
+
+    z-index: 22;
+
+    filter:
+        drop-shadow(
+            0 8px 12px
+            rgba(67, 45, 72, 0.08)
+        );
+
+    transition:
+        opacity 0.45s ease,
+        transform 0.45s ease;
+}
+
+.transition-scene.show
+.transition-npc {
+    opacity: 1;
+
+    transform:
+        translate(-50%, -50%)
+        translateY(0);
+}
+
+.transition-npc.changing {
+    opacity: 0;
+
+    transform:
+        translate(-50%, -50%)
+        scale(0.96);
+}
+
+
+/* =========================================================
+   轉場對話框
+========================================================= */
+
+.transition-dialog {
+    position: absolute;
+
+    left: 50%;
+    top: 35%;
+
+    transform:
+        translateX(-50%)
+        translateY(15px)
+        scale(0.96);
+
+    width:
+        min(
+            620px,
+            80vw
+        );
+
+    min-height: 130px;
+
+    padding:
+        30px
+        55px
+        30px
+        38px;
+
+    background:
+        rgba(255, 255, 255, 0.96);
+
+    border:
+        3px solid white;
+
+    border-radius: 25px;
+
+    box-shadow:
+        0 15px 40px
+        rgba(80, 40, 100, 0.15);
+
+    font-size: 24px;
+
+    line-height: 1.7;
+
+    opacity: 0;
+    visibility: hidden;
+
+    cursor: pointer;
+
+    z-index: 23;
+}
+
+.transition-dialog.show {
+    visibility: visible;
+
+    animation:
+        transitionDialogEnter
+        0.5s
+        ease-out
+        forwards;
+}
+
+@keyframes transitionDialogEnter {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateX(-50%)
+            translateY(15px)
+            scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+}
+
+.transition-dialog-text {
+    color: #4f4456;
+}
+
+.transition-next-icon {
+    position: absolute;
+
+    right: 22px;
+    bottom: 15px;
+
+    font-size: 14px;
+
+    color: #888;
+
+    opacity: 0;
+
+    transition:
+        opacity
+        0.3s
+        ease;
+
+    pointer-events: none;
+}
+
+.transition-next-icon.show {
+    opacity: 1;
+
+    animation:
+        transitionArrowMove
+        0.7s
+        infinite
+        alternate;
+}
+
+@keyframes transitionArrowMove {
+
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(5px);
+    }
+}
+
+
+/* =========================================================
+   NPC 最後退場
+========================================================= */
+
+.transition-scene.leave
+.transition-npc {
+    opacity: 0;
+
+    transform:
+        translate(-50%, -50%)
+        translateY(15px)
+        scale(0.95);
+
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s ease;
+}
+
+.transition-scene.leave
+.transition-dialog {
+    opacity: 0;
+
+    transform:
+        translateX(-50%)
+        translateY(-10px)
+        scale(0.97);
+
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s ease;
+}
+
+
+/* =========================================================
+   正式祝福篇：星空場景
+
+   ★ 深藍紫底色保留
+========================================================= */
+
+.blessing-scene {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    height: 100%;
+
+    padding: 40px;
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 30;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            #242447 0%,
+            #17192f 38%,
+            #0e1020 68%,
+            #080914 100%
+        );
+
+    transition:
+        opacity
+        1.8s
+        ease;
+}
+
+.blessing-scene.show {
+    opacity: 1;
+    visibility: visible;
+
+    pointer-events: auto;
+}
+
+
+/* =========================================================
+   隨機星空
+
+   ★ 星星由 JavaScript 動態建立
+   ★ 不使用固定背景平鋪
+   ★ 每顆星的位置、大小、亮度皆獨立
+========================================================= */
+
+.star-field {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 1;
+
+    overflow: hidden;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   所有星星共用
+========================================================= */
+
+.star {
+    position: absolute;
+
+    display: block;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, 0.95);
+
+    transform:
+        translate(-50%, -50%);
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   遠星
+
+   ★ 數量最多
+   ★ 很小、很淡
+   ★ 不閃爍
+========================================================= */
+
+.star-tiny {
+    box-shadow:
+        0 0 2px
+        rgba(255, 255, 255, 0.14);
+}
+
+
+/* =========================================================
+   中等亮星
+
+   ★ 少量
+   ★ 每顆自己的速度不同
+========================================================= */
+
+.star-medium {
+    background:
+        rgba(226, 232, 255, 0.9);
+
+    box-shadow:
+        0 0 4px
+        rgba(190, 205, 255, 0.22);
+
+    animation-name:
+        individualTwinkle;
+
+    animation-timing-function:
+        ease-in-out;
+
+    animation-iteration-count:
+        infinite;
+
+    animation-direction:
+        alternate;
+}
+
+
+/* =========================================================
+   亮星
+
+   ★ 數量極少
+   ★ 帶柔光
+   ★ 用偽元素做非常淡的星芒
+========================================================= */
+
+.star-bright {
+    background:
+        rgba(255, 255, 255, 0.50);
+
+    box-shadow:
+        0 0 5px
+        rgba(255, 255, 255, 0.28),
+        0 0 12px
+        rgba(185, 198, 255, 0.14),
+        0 0 22px
+        rgba(151, 166, 255, 0.06);
+
+    animation-name:
+        brightTwinkle;
+
+    animation-timing-function:
+        ease-in-out;
+
+    animation-iteration-count:
+        infinite;
+
+    animation-direction:
+        alternate;
+}
+
+.star-bright::before,
+.star-bright::after {
+    content: "";
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    border-radius: 999px;
+
+    pointer-events: none;
+}
+
+.star-bright::before {
+    width: 10px;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.12),
+            transparent
+        );
+}
+
+.star-bright::after {
+    width: 1px;
+    height: 10px;
+
+    background:
+        linear-gradient(
+            180deg,
+            transparent,
+            rgba(255, 255, 255, 0.10),
+            transparent
+        );
+}
+
+
+/* =========================================================
+   中等星獨立閃爍
+========================================================= */
+
+@keyframes individualTwinkle {
+
+    0% {
+        opacity: 0.32;
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.92);
+    }
+
+    45% {
+        opacity: 0.62;
+    }
+
+    100% {
+        opacity: 0.9;
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.08);
+    }
+
+}
+
+
+/* =========================================================
+   亮星獨立閃爍
+========================================================= */
+
+@keyframes brightTwinkle {
+
+    0% {
+        opacity: 0.38;
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.97);
+    }
+
+    100% {
+        opacity: 0.72;
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.06);
+    }
+
+}
+
+
+/* =========================================================
+   正式祝福文字舞台
+
+   ★ 注意：
+   這個容器本身必須永遠是可見的。
+
+   上一版問題就是這裡 opacity: 0，
+   但 JavaScript 把 show-text 加在裡面的文字，
+   導致整個父層永遠透明。
+========================================================= */
+
+.blessing-opening {
+    position: relative;
+
+    z-index: 5;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    width:
+        min(
+            900px,
+            90vw
+        );
+
+    min-height: 220px;
+
+    text-align: center;
+
+    opacity: 1;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   正式祝福文字
+
+   預設：
+   透明 + 稍微偏下
+
+   JavaScript 加入 show-text 後：
+   淡入 + 微微往上
+========================================================= */
+
+.blessing-opening-text {
+    width: 100%;
+
+    margin: 0;
+
+    /*
+       ★ 正式祝福文字全部置中
+    */
+    text-align: center;
+
+    opacity: 0;
+
+    transform:
+        translateY(10px);
+
+    font-size:
+        clamp(
+            24px,
+            2.7vw,
+            34px
+        );
+
+    font-weight: 400;
+
+    line-height: 1.9;
+
+    letter-spacing: 0.055em;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.95
+        );
+
+    text-shadow:
+        0 3px 22px
+        rgba(0, 0, 0, 0.42),
+        0 0 18px
+        rgba(170, 180, 255, 0.10);
+
+    transition:
+        opacity
+        1.15s
+        ease,
+        transform
+        1.15s
+        ease;
+}
+
+
+/* =========================================================
+   文字淡入
+========================================================= */
+
+.blessing-opening-text.show-text {
+    opacity: 1;
+
+    transform:
+        translateY(0);
+}
+
+
+/* =========================================================
+   文字淡出
+
+   淡出的同時再微微往上離開
+========================================================= */
+
+.blessing-opening-text.fade-out {
+    opacity: 0;
+
+    transform:
+        translateY(-8px);
+
+    transition:
+        opacity
+        0.9s
+        ease,
+        transform
+        0.9s
+        ease;
+}
+
+
+/* =========================================================
+   第一行標題
+
+   Sans，生日快樂。
+========================================================= */
+
+.blessing-opening-text.is-title {
+    font-size:
+        clamp(
+            30px,
+            3.5vw,
+            44px
+        );
+
+    font-weight: 500;
+
+    line-height: 1.7;
+
+    letter-spacing: 0.08em;
+}
+
+
+/* =========================================================
+   後續敘事文字
+========================================================= */
+
+.blessing-opening-text.is-story {
+    /*
+       ★ 敘事祝福固定使用整個文字區寬度，
+         每一行都以畫面中央為基準置中。
+    */
+    width: 100%;
+    max-width: 90%;
+
+    margin-left: auto;
+    margin-right: auto;
+
+    font-size: clamp(23px, 2.6vw, 33px);
+    font-weight: 400;
+    line-height: 1.9;
+    letter-spacing: .055em;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   Q5：Sans 自己寫下的生日願望
+========================================================= */
+
+.blessing-opening-text.is-wish {
+    width: fit-content;
+    max-width: 90%;
+
+    margin-left: auto;
+    margin-right: auto;
+
+    font-size: clamp(28px, 3.1vw, 40px);
+    font-weight: 500;
+    line-height: 1.8;
+    letter-spacing: 0.06em;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   手機版
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .question-paper {
+        width: 92vw;
+
+        min-height: 560px;
+
+        padding:
+            35px
+            25px
+            40px;
+    }
+
+    .question-title {
+        font-size: 22px;
+
+        margin-bottom: 26px;
+    }
+
+    .question-title
+    .question-subtitle {
+        margin-top: 8px;
+
+        font-size: 13px;
+    }
+
+    .answer-options {
+        grid-template-columns:
+            1fr;
+
+        gap: 12px;
+    }
+
+    .answer-button {
+        min-height: 58px;
+
+        font-size: 15px;
+    }
+
+    .yes-no-area {
+        gap: 35px;
+    }
+
+    .yes-no-button {
+        min-width: 115px;
+
+        padding:
+            15px
+            25px;
+
+        font-size: 20px;
+    }
+
+    .question-comment {
+        bottom: 10px;
+    }
+
+    .comment-npc {
+        width: 85px;
+    }
+
+    .comment-bubble {
+        min-height: 105px;
+
+        padding:
+            15px
+            18px
+            52px;
+    }
+
+    .comment-text {
+        font-size: 15px;
+    }
+
+    .comment-retry-button {
+        left: 6px;
+        bottom: 5px;
+
+        padding:
+            10px
+            10px;
+
+        font-size: 12px;
+    }
+
+    .comment-next-button {
+        right: 6px;
+        bottom: 5px;
+
+        padding:
+            10px
+            10px;
+
+        font-size: 12px;
+    }
+
+    .text-answer-area {
+        transform:
+            translateY(-20px);
+    }
+
+
+    /* =========================
+       手機版轉場 NPC
+
+       ★ 原位置完全保留
+    ========================= */
+
+    .transition-npc {
+        width: 175px;
+
+        left: 20%;
+        top: 58%;
+    }
+
+
+    /* =========================
+       手機版轉場對話框
+    ========================= */
+
+    .transition-dialog {
+        width: 86vw;
+
+        top: 32%;
+
+        min-height: 120px;
+
+        padding:
+            25px
+            45px
+            28px
+            28px;
+
+        font-size: 20px;
+    }
+
+    .transition-next-icon {
+        right: 17px;
+        bottom: 12px;
+
+        font-size: 12px;
+    }
+
+
+    /* =========================
+       手機版正式祝福
+    ========================= */
+
+    .blessing-scene {
+        padding: 25px;
+    }
+
+    .blessing-opening {
+        width: 92vw;
+
+        min-height: 200px;
+    }
+
+    .blessing-opening-text {
+        font-size: 22px;
+
+        line-height: 1.75;
+
+        letter-spacing: 0.04em;
+    }
+
+    .blessing-opening-text.is-title {
+        font-size: 30px;
+
+        line-height: 1.6;
+    }
+
+    .blessing-opening-text.is-story {
+        font-size: 21px;
+
+        line-height: 1.8;
+    }
+
+    .blessing-opening-text.is-wish {
+        max-width: 92%;
+
+        font-size: 26px;
+
+        line-height: 1.75;
+    }
+
+}
+
+
+/* =========================================================
+   ★ 煙火篇全畫面純黑
+   ---------------------------------------------------------
+   注意：
+   這裡完全不修改 NPC、對話框、問答、轉場的位置。
+   只在 JavaScript 加上 fireworks-mode 後生效。
+========================================================= */
+
+body.fireworks-mode {
+    background: #000 !important;
+}
+
+body.fireworks-mode .birthday-stage {
+    background: #000 !important;
+}
+
+body.fireworks-mode .blessing-scene {
+    background: #000 !important;
+}
+
+body.fireworks-mode .star-field {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
