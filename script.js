@@ -98,24 +98,23 @@ let npcBgmFadeTimer = null;
    生日煙火真正開始前淡出停止
 ========================================================= */
 
-let blessingBgm = null;
+const blessingBgm =
+    new Audio(
+        "assets/audio/幾分之幾.mp3"
+    );
 
-function getBlessingBgm() {
+blessingBgm.loop = true;
 
-    if (!blessingBgm) {
+/*
+   ★ 第二段背景音量
+   0.20 = 20%
 
-        blessingBgm = new Audio(
-            "assets/audio/幾分之幾.mp3"
-        );
+   如果之後覺得人聲太大，
+   可以改成 0.15～0.18。
+*/
+blessingBgm.volume = 0.20;
 
-        blessingBgm.loop = true;
-        blessingBgm.volume = 0.20;
-        blessingBgm.preload = "metadata";
-
-    }
-
-    return blessingBgm;
-}
+blessingBgm.preload = "auto";
 
 
 let blessingBgmStarted = false;
@@ -157,8 +156,51 @@ const blessingStarTailDuration = 4200;
 
 function unlockBlessingBgm() {
 
-    // iPhone Safari：開場時不要播放或建立第二段音樂。
-    blessingBgmUnlocked = true;
+    if (blessingBgmUnlocked) {
+        return;
+    }
+
+
+    const oldVolume =
+        blessingBgm.volume;
+
+    blessingBgm.volume = 0;
+
+
+    const playPromise =
+        blessingBgm.play();
+
+
+    if (
+        playPromise !== undefined
+    ) {
+
+        playPromise
+            .then(() => {
+
+                blessingBgm.pause();
+
+                blessingBgm.currentTime = 0;
+
+                blessingBgm.volume =
+                    oldVolume;
+
+                blessingBgmUnlocked = true;
+
+            })
+            .catch(error => {
+
+                blessingBgm.volume =
+                    oldVolume;
+
+                console.log(
+                    "第二段 BGM 預先解鎖失敗：",
+                    error
+                );
+
+            });
+
+    }
 
 }
 
@@ -173,8 +215,6 @@ function startBlessingBgm() {
         return;
     }
 
-    const blessingAudio = getBlessingBgm();
-
     blessingBgmStarted = true;
 
     /*
@@ -182,11 +222,11 @@ function startBlessingBgm() {
          播放時直接使用第二段設定音量 20%。
     */
 
-    blessingAudio.volume = 0.20;
+    blessingBgm.volume = 0.20;
 
 
     const playPromise =
-        blessingAudio.play();
+        blessingBgm.play();
 
 
     if (
@@ -218,12 +258,6 @@ function startBlessingBgm() {
 function fadeOutBlessingBgm(
     duration = 1500
 ) {
-
-    if (!blessingBgm) {
-        blessingBgmStarted = false;
-        return;
-    }
-
 
     if (blessingBgmFadeTimer) {
 
@@ -311,24 +345,20 @@ function fadeOutBlessingBgm(
      只要改這一行路徑即可。
 ========================================================= */
 
-let fireworksBgm = null;
+const fireworksBgm =
+    new Audio(
+        "assets/audio/HBD.mp3"
+    );
 
-function getFireworksBgm() {
+fireworksBgm.loop = true;
 
-    if (!fireworksBgm) {
+/*
+   ★ 第三段背景音量
+   0.22 = 22%
+*/
+fireworksBgm.volume = 0.22;
 
-        fireworksBgm = new Audio(
-            "assets/audio/HBD.mp3"
-        );
-
-        fireworksBgm.loop = true;
-        fireworksBgm.volume = 0.22;
-        fireworksBgm.preload = "metadata";
-
-    }
-
-    return fireworksBgm;
-}
+fireworksBgm.preload = "auto";
 
 
 let fireworksBgmStarted = false;
@@ -347,66 +377,9 @@ let fireworksBgmUnlocked = false;
 
 function unlockFireworksBgm() {
 
-    /*
-       開場時完全不碰 HBD。
-       保留這個函式只是避免舊程式引用出錯。
-    */
-    return;
-
-}
-
-
-/* =========================================================
-   ★ iPhone Safari：在進入星空前「最後一次真人點擊」
-     取得 HBD 播放資格。
-
-   注意：
-   - 這裡才建立 HBD Audio
-   - volume = 0，所以此時不會聽到生日快樂
-   - play() 後不 pause，保留 Safari 已取得的播放狀態
-   - 到「最後最後……」時再歸零並打開音量
-========================================================= */
-
-function armFireworksBgm() {
-
-    if (fireworksBgmUnlocked) {
-        return;
-    }
-
-    const fireworksAudio =
-        getFireworksBgm();
-
-    fireworksAudio.muted = false;
-    fireworksAudio.volume = 0;
-    fireworksAudio.currentTime = 0;
-
-    const playPromise =
-        fireworksAudio.play();
-
-    if (
-        playPromise !== undefined
-    ) {
-
-        playPromise
-            .then(() => {
-
-                fireworksBgmUnlocked = true;
-
-            })
-            .catch(error => {
-
-                console.log(
-                    "第三段 HBD BGM 解鎖失敗：",
-                    error
-                );
-
-            });
-
-    } else {
-
-        fireworksBgmUnlocked = true;
-
-    }
+    // iPhone Safari 不在開場預播放 HBD
+    // 避免生日快樂音樂在開頭偷跑
+    fireworksBgmUnlocked = true;
 
 }
 
@@ -415,222 +388,42 @@ function armFireworksBgm() {
    播放第三段 HBD BGM
 ========================================================= */
 
-
-/* =========================================================
-   ★ HBD iPhone 診斷框
-   只顯示 Audio 狀態，不改原本音樂流程。
-========================================================= */
-
-let hbdDebugBox = null;
-
-function showHbdDebug(lines) {
-
-    if (!hbdDebugBox) {
-
-        hbdDebugBox =
-            document.createElement("div");
-
-        Object.assign(
-            hbdDebugBox.style,
-            {
-                position: "fixed",
-                left: "10px",
-                right: "10px",
-                bottom: "10px",
-                zIndex: "999999",
-                background: "rgba(0,0,0,0.88)",
-                color: "#7CFF7C",
-                border: "1px solid #7CFF7C",
-                borderRadius: "8px",
-                padding: "10px",
-                fontSize: "12px",
-                lineHeight: "1.5",
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
-                pointerEvents: "none"
-            }
-        );
-
-        document.body.appendChild(
-            hbdDebugBox
-        );
-
-    }
-
-    hbdDebugBox.textContent =
-        lines.join("\n");
-
-}
-
-
-function getHbdDebugState(
-    audio,
-    extra = ""
-) {
-
-    return [
-        "=== HBD DEBUG ===",
-        "extra: " + extra,
-        "src: " + (
-            audio
-                ? (
-                    audio.currentSrc ||
-                    audio.src ||
-                    "(empty)"
-                )
-                : "(no audio)"
-        ),
-        "paused: " + (
-            audio
-                ? audio.paused
-                : "N/A"
-        ),
-        "ended: " + (
-            audio
-                ? audio.ended
-                : "N/A"
-        ),
-        "currentTime: " + (
-            audio
-                ? audio.currentTime
-                : "N/A"
-        ),
-        "duration: " + (
-            audio
-                ? audio.duration
-                : "N/A"
-        ),
-        "volume: " + (
-            audio
-                ? audio.volume
-                : "N/A"
-        ),
-        "muted: " + (
-            audio
-                ? audio.muted
-                : "N/A"
-        ),
-        "readyState: " + (
-            audio
-                ? audio.readyState
-                : "N/A"
-        ),
-        "networkState: " + (
-            audio
-                ? audio.networkState
-                : "N/A"
-        ),
-        "error: " + (
-            audio && audio.error
-                ? (
-                    audio.error.code +
-                    " / " +
-                    (audio.error.message || "")
-                )
-                : "none"
-        )
-    ];
-
-}
-
 function startFireworksBgm() {
 
     if (fireworksBgmStarted) {
-
-        showHbdDebug(
-            getHbdDebugState(
-                fireworksBgm,
-                "startFireworksBgm 被呼叫，但 fireworksBgmStarted 已是 true"
-            )
-        );
-
         return;
     }
 
-    const fireworksAudio =
-        getFireworksBgm();
-
     fireworksBgmStarted = true;
-    fireworksAudio.volume = 0.22;
 
-    showHbdDebug(
-        getHbdDebugState(
-            fireworksAudio,
-            "準備呼叫 play()"
-        )
-    );
+    fireworksBgm.volume = 0.22;
+
 
     const playPromise =
-        fireworksAudio.play();
+        fireworksBgm.play();
+
 
     if (
         playPromise !== undefined
     ) {
 
-        playPromise
-            .then(() => {
+        playPromise.catch(
+            error => {
 
-                showHbdDebug(
-                    getHbdDebugState(
-                        fireworksAudio,
-                        "play() RESOLVED"
-                    )
+                fireworksBgmStarted = false;
+
+                console.log(
+                    "第三段 HBD BGM 無法播放：",
+                    error
                 );
 
-                setTimeout(
-                    () => {
-
-                        showHbdDebug(
-                            getHbdDebugState(
-                                fireworksAudio,
-                                "play() 成功後 1 秒"
-                            )
-                        );
-
-                    },
-                    1000
-                );
-
-            })
-            .catch(
-                error => {
-
-                    fireworksBgmStarted =
-                        false;
-
-                    const lines =
-                        getHbdDebugState(
-                            fireworksAudio,
-                            "play() REJECTED"
-                        );
-
-                    lines.push(
-                        "promise error: " +
-                        error.name +
-                        " / " +
-                        error.message
-                    );
-
-                    showHbdDebug(
-                        lines
-                    );
-
-                }
-            );
-
-    } else {
-
-        showHbdDebug(
-            getHbdDebugState(
-                fireworksAudio,
-                "play() 沒有回傳 Promise"
-            )
+            }
         );
 
     }
 
 }
+
 
 
 /* =========================================================
@@ -782,11 +575,13 @@ function startFullBirthdayCard() {
        ★ 最初點擊時先解鎖第二段「幾分之幾」。
        不會提前出聲。
     */
+    unlockBlessingBgm();
 
     /*
        ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
        此時不會出聲。
     */
+    unlockFireworksBgm();
 
     document.body.classList.remove(
         "site-not-started"
@@ -6998,13 +6793,6 @@ transitionDialog.addEventListener(
             currentTransitionDialogue >=
             transitionDialogues.length - 1
         ) {
-
-            /*
-               ★ 這一下是進入星空祝福前最後一次真人點擊。
-               利用這次點擊取得 iPhone Safari 的 HBD 播放資格。
-               此時音量為 0，不會聽到生日快樂。
-            */
-            armFireworksBgm();
 
             finishTransitionScene();
 
