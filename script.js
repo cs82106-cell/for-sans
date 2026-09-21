@@ -156,8 +156,6 @@ const blessingStarTailDuration = 4200;
 
 function unlockBlessingBgm() {
 
-    // iPhone Safari 不在開場預播放「幾分之幾」
-    // 避免開場時音樂偷跑
     blessingBgmUnlocked = true;
 
 }
@@ -335,8 +333,6 @@ let fireworksBgmUnlocked = false;
 
 function unlockFireworksBgm() {
 
-    // iPhone Safari 不在開場預播放 HBD
-    // 避免生日快樂音樂在開頭偷跑
     fireworksBgmUnlocked = true;
 
 }
@@ -528,18 +524,6 @@ function startFullBirthdayCard() {
     }
 
     entryStarted = true;
-
-    /*
-       ★ 最初點擊時先解鎖第二段「幾分之幾」。
-       不會提前出聲。
-    */
-    unlockBlessingBgm();
-
-    /*
-       ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
-       此時不會出聲。
-    */
-    unlockFireworksBgm();
 
     document.body.classList.remove(
         "site-not-started"
