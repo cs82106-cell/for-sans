@@ -376,50 +376,175 @@ function armFireworksBgm() {
     const fireworksAudio =
         getFireworksBgm();
 
-    fireworksAudio.loop = true;
     fireworksAudio.muted = false;
-
-    /*
-       ★ 關鍵：
-       iPhone Safari 可能把 volume = 0 / muted 的背景音訊暫停。
-       所以這裡使用極低但「不是 0」的音量維持播放資格。
-       0.001 幾乎聽不到，但對瀏覽器來說仍是正在播放的媒體。
-    */
-    fireworksAudio.volume = 0.001;
-
-    try {
-        fireworksAudio.currentTime = 0;
-    } catch (error) {}
+    fireworksAudio.volume = 0;
+    fireworksAudio.currentTime = 0;
 
     const playPromise =
         fireworksAudio.play();
 
-    if (playPromise !== undefined) {
+    if (
+        playPromise !== undefined
+    ) {
 
         playPromise
             .then(() => {
+
                 fireworksBgmUnlocked = true;
+
             })
             .catch(error => {
+
                 console.log(
-                    "HBD 預啟動失敗：",
+                    "第三段 HBD BGM 解鎖失敗：",
                     error
                 );
+
             });
 
     } else {
+
         fireworksBgmUnlocked = true;
+
     }
 
 }
+
 
 /* =========================================================
    播放第三段 HBD BGM
 ========================================================= */
 
+
+/* =========================================================
+   ★ HBD iPhone 診斷框
+   只顯示 Audio 狀態，不改原本音樂流程。
+========================================================= */
+
+let hbdDebugBox = null;
+
+function showHbdDebug(lines) {
+
+    if (!hbdDebugBox) {
+
+        hbdDebugBox =
+            document.createElement("div");
+
+        Object.assign(
+            hbdDebugBox.style,
+            {
+                position: "fixed",
+                left: "10px",
+                right: "10px",
+                bottom: "10px",
+                zIndex: "999999",
+                background: "rgba(0,0,0,0.88)",
+                color: "#7CFF7C",
+                border: "1px solid #7CFF7C",
+                borderRadius: "8px",
+                padding: "10px",
+                fontSize: "12px",
+                lineHeight: "1.5",
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+                pointerEvents: "none"
+            }
+        );
+
+        document.body.appendChild(
+            hbdDebugBox
+        );
+
+    }
+
+    hbdDebugBox.textContent =
+        lines.join("\n");
+
+}
+
+
+function getHbdDebugState(
+    audio,
+    extra = ""
+) {
+
+    return [
+        "=== HBD DEBUG ===",
+        "extra: " + extra,
+        "src: " + (
+            audio
+                ? (
+                    audio.currentSrc ||
+                    audio.src ||
+                    "(empty)"
+                )
+                : "(no audio)"
+        ),
+        "paused: " + (
+            audio
+                ? audio.paused
+                : "N/A"
+        ),
+        "ended: " + (
+            audio
+                ? audio.ended
+                : "N/A"
+        ),
+        "currentTime: " + (
+            audio
+                ? audio.currentTime
+                : "N/A"
+        ),
+        "duration: " + (
+            audio
+                ? audio.duration
+                : "N/A"
+        ),
+        "volume: " + (
+            audio
+                ? audio.volume
+                : "N/A"
+        ),
+        "muted: " + (
+            audio
+                ? audio.muted
+                : "N/A"
+        ),
+        "readyState: " + (
+            audio
+                ? audio.readyState
+                : "N/A"
+        ),
+        "networkState: " + (
+            audio
+                ? audio.networkState
+                : "N/A"
+        ),
+        "error: " + (
+            audio && audio.error
+                ? (
+                    audio.error.code +
+                    " / " +
+                    (audio.error.message || "")
+                )
+                : "none"
+        )
+    ];
+
+}
+
 function startFireworksBgm() {
 
     if (fireworksBgmStarted) {
+
+        showHbdDebug(
+            getHbdDebugState(
+                fireworksBgm,
+                "startFireworksBgm 被呼叫，但 fireworksBgmStarted 已是 true"
+            )
+        );
+
         return;
     }
 
@@ -427,44 +552,81 @@ function startFireworksBgm() {
         getFireworksBgm();
 
     fireworksBgmStarted = true;
-
-    /*
-       HBD 在最後一次 NPC 點擊時就已經以極低音量持續播放。
-       到「最後最後……」不重新建立、不換 src、不 pause。
-       只回到歌曲開頭並把音量打開。
-    */
-    try {
-        fireworksAudio.currentTime = 0;
-    } catch (error) {}
-
-    fireworksAudio.muted = false;
     fireworksAudio.volume = 0.22;
 
-    /*
-       正常情況不需要再次 play()。
-       若瀏覽器意外暫停，仍補一次作為保險。
-    */
-    if (fireworksAudio.paused) {
+    showHbdDebug(
+        getHbdDebugState(
+            fireworksAudio,
+            "準備呼叫 play()"
+        )
+    );
 
-        const playPromise =
-            fireworksAudio.play();
+    const playPromise =
+        fireworksAudio.play();
 
-        if (playPromise !== undefined) {
+    if (
+        playPromise !== undefined
+    ) {
 
-            playPromise.catch(
+        playPromise
+            .then(() => {
+
+                showHbdDebug(
+                    getHbdDebugState(
+                        fireworksAudio,
+                        "play() RESOLVED"
+                    )
+                );
+
+                setTimeout(
+                    () => {
+
+                        showHbdDebug(
+                            getHbdDebugState(
+                                fireworksAudio,
+                                "play() 成功後 1 秒"
+                            )
+                        );
+
+                    },
+                    1000
+                );
+
+            })
+            .catch(
                 error => {
 
-                    fireworksBgmStarted = false;
+                    fireworksBgmStarted =
+                        false;
 
-                    console.log(
-                        "第三段 HBD BGM 無法播放：",
-                        error
+                    const lines =
+                        getHbdDebugState(
+                            fireworksAudio,
+                            "play() REJECTED"
+                        );
+
+                    lines.push(
+                        "promise error: " +
+                        error.name +
+                        " / " +
+                        error.message
+                    );
+
+                    showHbdDebug(
+                        lines
                     );
 
                 }
             );
 
-        }
+    } else {
+
+        showHbdDebug(
+            getHbdDebugState(
+                fireworksAudio,
+                "play() 沒有回傳 Promise"
+            )
+        );
 
     }
 
