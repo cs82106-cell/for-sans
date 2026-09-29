@@ -3707,7 +3707,7 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
             <div style="
                 width: 100%;
                 text-align: center;
-                font-size: clamp(53px, 7vw, 96px);
+                font-size: clamp(55px, 7vw, 96px);
                 line-height: 1.05;
                 font-weight: 400;
                 letter-spacing: 0;
@@ -3719,7 +3719,7 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
                 width: 100%;
                 margin-top: 0.28em;
                 text-align: center;
-                font-size: clamp(43px, 5.6vw, 78px);
+                font-size: clamp(45px, 5.6vw, 78px);
                 line-height: 1.18;
                 font-weight: 600;
                 letter-spacing: 0.08em;
@@ -3731,7 +3731,7 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
                 width: 100%;
                 margin-top: 0.48em;
                 text-align: center;
-                font-size: clamp(28px, 3.4vw, 46px);
+                font-size: clamp(30px, 3.4vw, 46px);
                 line-height: 1.45;
                 font-weight: 400;
                 letter-spacing: 0.07em;
