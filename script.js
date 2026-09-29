@@ -99,103 +99,73 @@ console.log("[AUDIO DEBUG]", {
     userAgent: navigator.userAgent
 });
 
-/* iOS Safari: unlock one AudioContext in the entry click. A decoded track
-   has no playback until its scene requests a source node. */
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+/* Use one media element for all three tracks. It starts playback as soon as
+   enough data is buffered, rather than fetching and decoding an entire song. */
+const musicPlayer = new Audio();
+musicPlayer.preload = 'auto';
+musicPlayer.loop = true;
 let activeMusic = null;
+let wantedMusic = null;
+
+const musicRetryButton = document.createElement('button');
+musicRetryButton.type = 'button';
+musicRetryButton.textContent = '點擊播放音樂';
+musicRetryButton.style.cssText = 'position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 18px;border:1px solid #ddd;border-radius:24px;background:#252133;color:white;font-size:15px;cursor:pointer;display:none';
+document.body.appendChild(musicRetryButton);
+musicRetryButton.addEventListener('click', () => {
+    musicRetryButton.style.display = 'none';
+    musicPlayer.load();
+    if (wantedMusic) wantedMusic.play().catch(() => {
+        musicRetryButton.style.display = 'block';
+    });
+});
 
 function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
-    const gain = audioContext.createGain();
-    gain.gain.value = defaultVolume;
-    gain.connect(audioContext.destination);
     let volume = defaultVolume;
-    let source = null;
-    let pending = false;
-    let generation = 0;
-    // Lazy, shared preparation: failed downloads can be retried.
-    let bufferPromise = null;
-    function prepare() {
-        if (!bufferPromise) {
-            bufferPromise = retryAsset(async () => {
-                const controller = new AbortController();
-                let timer;
-                try {
-                    return await Promise.race([
-                        (async () => {
-                            const response = await fetch(url, { signal: controller.signal });
-                            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
-                            const bytes = await response.arrayBuffer();
-                            return await audioContext.decodeAudioData(bytes);
-                        })(),
-                        new Promise((_, reject) => {
-                            timer = setTimeout(() => {
-                                controller.abort();
-                                reject(new Error(`${url}: download or decode timeout`));
-                            }, 25000);
-                        })
-                    ]);
-                } finally {
-                    clearTimeout(timer);
-                }
-            }).catch(error => {
-                bufferPromise = null;
-                audioDebug('load-failed', name, null, { error: String(error) });
-                throw error;
-            });
-        }
-        return bufferPromise;
-    }
-
     const music = {
-        prepare,
         get src() { return url; },
-        get paused() { return !source; },
-        get currentTime() { return 0; },
-        set currentTime(value) { /* playback always begins at the start */ },
-        get readyState() { return source ? 4 : 0; },
-        get networkState() { return 0; },
+        get paused() { return activeMusic !== music || musicPlayer.paused; },
+        get currentTime() { return activeMusic === music ? musicPlayer.currentTime : 0; },
+        set currentTime(value) {
+            if (activeMusic === music) musicPlayer.currentTime = value;
+        },
+        get readyState() { return activeMusic === music ? musicPlayer.readyState : 0; },
+        get networkState() { return activeMusic === music ? musicPlayer.networkState : 0; },
         get volume() { return volume; },
         set volume(value) {
             volume = Math.max(0, Math.min(1, value));
-            gain.gain.cancelScheduledValues(audioContext.currentTime);
-            gain.gain.setValueAtTime(volume, audioContext.currentTime);
+            if (activeMusic === music) musicPlayer.volume = volume;
         },
         pause() {
-            generation++;
-            pending = false;
-            if (source) {
-                source.stop();
-                source.disconnect();
-                source = null;
-            }
-            if (activeMusic === music) activeMusic = null;
+            if (activeMusic !== music) return;
+            musicPlayer.pause();
+            activeMusic = null;
         },
         async play() {
-            if (source || pending) return;
-            pending = true;
-            const request = ++generation;
-            try {
-                const buffer = await prepare();
-                if (request !== generation) return;
-                if (audioContext.state !== 'running') await audioContext.resume();
-                if (request !== generation) return;
-                if (activeMusic && activeMusic !== music) activeMusic.pause();
-                const node = audioContext.createBufferSource();
-                node.buffer = buffer;
-                node.loop = true;
-                node.connect(gain);
-                const startedAt = audioContext.currentTime;
-                gain.gain.cancelScheduledValues(startedAt);
-                gain.gain.setValueAtTime(fadeInSeconds > 0 ? 0 : volume, startedAt);
-                if (fadeInSeconds > 0) {
-                    gain.gain.linearRampToValueAtTime(volume, startedAt + fadeInSeconds);
-                }
-                node.start(startedAt);
-                source = node;
+            wantedMusic = music;
+            musicRetryButton.style.display = 'none';
+            if (activeMusic !== music) {
+                if (activeMusic) activeMusic.pause();
                 activeMusic = music;
+                musicPlayer.src = url;
+                musicPlayer.volume = fadeInSeconds ? 0 : volume;
+                // Safari permits subsequent scene changes on the same element
+                // after the first tap starts it. A visible retry handles blocks.
+            }
+            const currentRequest = music;
+            try {
+                await musicPlayer.play();
+                if (activeMusic !== currentRequest) return;
+                if (fadeInSeconds) {
+                    musicPlayer.volume = volume;
+                }
                 audioDebug('started', name, music);
-            } finally {
-                if (request === generation) pending = false;
+            } catch (error) {
+                if (activeMusic === currentRequest) {
+                    audioDebug('stream-failed', name, music, { error: String(error) });
+                    musicRetryButton.style.display = 'block';
+                }
+                throw error;
             }
         }
     };
@@ -303,40 +273,7 @@ async function startFullBirthdayCard() {
 
     entryStarted = true;
 
-    // Resume during the actual tap. Later scenes only create their own source.
-    entryScreen.disabled = true;
-    setEntryHint('正在開啟……');
-    let resumeTimer;
-    try {
-        // resume() is invoked synchronously in the user's click handler.
-        await Promise.race([
-            audioContext.resume(),
-            new Promise((_, reject) => {
-                resumeTimer = setTimeout(() => reject(new Error('Audio resume timeout')), 8000);
-            })
-        ]);
-        if (audioContext.state !== 'running') throw new Error('Audio context is not running');
-    } catch (error) {
-        entryStarted = false;
-        entryScreen.disabled = false;
-        setEntryHint('音訊尚未啟用，請再點一次');
-        audioDebug('context-resume-failed', 'AudioContext', null, { error: String(error) });
-        return;
-    } finally {
-        clearTimeout(resumeTimer);
-    }
-
-    // Unlock audio with a real tap BEFORE downloading/decoding.
-    // A second tap after preparation starts playback with a fresh user gesture.
-    if (!entryAssetsReady) {
-        try {
-            await prepareEntryAssets();
-        } finally {
-            entryStarted = false;
-        }
-        return;
-    }
-
+    // The first scene calls play() within this tap, allowing iOS playback.
     document.body.classList.remove(
         "site-not-started"
     );
@@ -4923,101 +4860,10 @@ window.addEventListener("pagehide", event => {
     audioDebug("pagehide", "window", null, { persisted: event.persisted });
 });
 
-// Start preparation before window.load (which can wait on unrelated assets).
-let entryAssetsReady = false;
-let entryPreparation = null;
-const preparedImages = new Map();
-
-function setEntryHint(text) {
-    const hint = entryScreen.querySelector('.entry-hint');
-    if (hint) hint.textContent = text;
-}
-
-async function retryAsset(operation) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-            return await operation();
-        } catch (error) {
-            if (attempt === 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, 800));
-        }
-    }
-}
-
-function prepareNpcImage(url) {
-    if (preparedImages.has(url)) return preparedImages.get(url);
-    const pending = retryAsset(() => new Promise((resolve, reject) => {
-        const img = new Image();
-        const timer = setTimeout(() => finish(new Error('Image timeout: ' + url)), 45000);
-        function finish(error) {
-            clearTimeout(timer);
-            img.onload = img.onerror = null;
-            if (error) reject(error);
-            else resolve(img);
-        }
-        img.onload = () => finish();
-        img.onerror = () => finish(new Error('Image failed: ' + url));
-        img.src = url;
-    })).catch(error => {
-        preparedImages.delete(url);
-        throw error;
-    });
-    preparedImages.set(url, pending);
-    return pending;
-}
-
-async function prepareEntryAssets() {
-    if (entryAssetsReady || entryPreparation) return entryPreparation;
-    entryScreen.hidden = false;
-    entryScreen.disabled = true;
-    entryScreen.setAttribute('aria-busy', 'true');
-    const images = [...new Set([
-        ...npcImages,
-        ...transitionDialogues.map(dialogue => dialogue.image),
-        'assets/images/NPC-teacher.png'
-    ])];
-    const total = images.length + 3;
-    let completed = 0;
-    const progress = () => setEntryHint(`正在準備音樂與圖片 ${completed}/${total}`);
-    progress();
-    entryPreparation = (async () => {
-        // Prioritize the opening track; do not download/decode all tracks at once.
-        for (const music of [npcBgm, blessingBgm, fireworksBgm]) {
-            await music.prepare();
-            completed++;
-            progress();
-        }
-        // Keep concurrency bounded, and wait for all workers before offering retry.
-        let next = 0;
-        const workers = Array.from({ length: 3 }, async () => {
-            while (next < images.length) {
-                const url = images[next++];
-                await prepareNpcImage(url);
-                completed++;
-                progress();
-            }
-        });
-        const outcomes = await Promise.allSettled(workers);
-        const failure = outcomes.find(result => result.status === 'rejected');
-        if (failure) throw failure.reason;
-        entryAssetsReady = true;
-        setEntryHint('準備完成，點擊開啟');
-    })().catch(error => {
-        setEntryHint('載入逾時或失敗，點擊重試');
-        console.error('[ASSET LOAD]', error);
-    }).finally(() => {
-        entryScreen.disabled = false;
-        entryScreen.setAttribute('aria-busy', 'false');
-        entryPreparation = null;
-    });
-    return entryPreparation;
-}
-
-// Do not gate the first gesture behind AudioContext decoding.
+// Native audio streams each scene on demand; the entry button never waits
+// for every music file or image to finish downloading.
 entryScreen.disabled = false;
 entryScreen.setAttribute('aria-busy', 'false');
-setEntryHint('點擊準備生日卡片');
-
 
 /* =========================================================
    ★ 開發測試：
