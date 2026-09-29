@@ -2515,7 +2515,7 @@ body.fireworks-mode .star-field {
 
     .npc-scene .npc {
         width: 175px;
-        top: 70%;
+        top: 58%;
         left: 20%;
         animation: npcWalkInMobile 5s linear forwards;
     }
