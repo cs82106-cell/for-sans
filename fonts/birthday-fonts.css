@@ -1,0 +1,24 @@
+/* 星空祝福到煙火的主要字型（中文及其他字元）。 */
+@font-face {
+    font-family: "Birthday Main";
+    src: url("./FONTS.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+/* 英文獨立設定：日後只改這裡的 src 即可，保留 font-family 名稱。
+   例如 src: url("./Foxlite Script.ttf") format("truetype");
+   此設定僅套用英文、數字及半形標點，不影響中文。 */
+@font-face {
+    font-family: "Birthday English";
+    src: url("./FONTS.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range: U+0020-007E;
+}
+
+:root {
+    --birthday-font-family: "Birthday English", "Birthday Main", "Microsoft JhengHei", sans-serif;
+}
