@@ -112,16 +112,32 @@ function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
     let source = null;
     let pending = false;
     let generation = 0;
-    const bufferPromise = fetch(url)
-        .then(response => {
-            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
-            return response.arrayBuffer();
-        })
-        .then(bytes => audioContext.decodeAudioData(bytes));
-    // Prevent an early fetch error from becoming an unhandled rejection.
-    bufferPromise.catch(error => audioDebug('load-failed', name, null, { error: String(error) }));
+    // Lazy, shared preparation: failed downloads can be retried.
+    let bufferPromise = null;
+    function prepare() {
+        if (!bufferPromise) {
+            bufferPromise = retryAsset(async () => {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 45000);
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+                    const bytes = await response.arrayBuffer();
+                    return await audioContext.decodeAudioData(bytes);
+                } finally {
+                    clearTimeout(timer);
+                }
+            }).catch(error => {
+                bufferPromise = null;
+                audioDebug('load-failed', name, null, { error: String(error) });
+                throw error;
+            });
+        }
+        return bufferPromise;
+    }
 
     const music = {
+        prepare,
         get src() { return url; },
         get paused() { return !source; },
         get currentTime() { return 0; },
@@ -149,7 +165,7 @@ function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
             pending = true;
             const request = ++generation;
             try {
-                const buffer = await bufferPromise;
+                const buffer = await prepare();
                 if (request !== generation) return;
                 if (audioContext.state !== 'running') await audioContext.resume();
                 if (request !== generation) return;
@@ -266,7 +282,7 @@ function fadeOutBlessingBgm(duration = 1500) {
    音樂就已經同步開始。
 ========================================================= */
 
-function startFullBirthdayCard() {
+async function startFullBirthdayCard() {
 
     audioDebug("entry-click", "entryScreen", null, { entryStarted });
     setAudioDebugScene("entry-click");
@@ -275,12 +291,35 @@ function startFullBirthdayCard() {
         return;
     }
 
+    if (!entryAssetsReady) {
+        prepareEntryAssets();
+        return;
+    }
+
     entryStarted = true;
 
     // Resume during the actual tap. Later scenes only create their own source.
-    audioContext.resume().catch(error =>
-        audioDebug('context-resume-failed', 'AudioContext', null, { error: String(error) })
-    );
+    entryScreen.disabled = true;
+    setEntryHint('正在開啟……');
+    let resumeTimer;
+    try {
+        // resume() is invoked synchronously in the user's click handler.
+        await Promise.race([
+            audioContext.resume(),
+            new Promise((_, reject) => {
+                resumeTimer = setTimeout(() => reject(new Error('Audio resume timeout')), 8000);
+            })
+        ]);
+        if (audioContext.state !== 'running') throw new Error('Audio context is not running');
+    } catch (error) {
+        entryStarted = false;
+        entryScreen.disabled = false;
+        setEntryHint('音訊尚未啟用，請再點一次');
+        audioDebug('context-resume-failed', 'AudioContext', null, { error: String(error) });
+        return;
+    } finally {
+        clearTimeout(resumeTimer);
+    }
 
     document.body.classList.remove(
         "site-not-started"
@@ -289,6 +328,16 @@ function startFullBirthdayCard() {
     entryScreen.classList.add(
         "hide"
     );
+
+    if (!FORCE_NORMAL_START && START_MODE === "blessing") {
+        startBlessingTestMode();
+        return;
+    }
+    if (!FORCE_NORMAL_START && START_MODE === "transition") {
+        startNpcBgm();
+        startTransitionTestMode();
+        return;
+    }
 
     if (!FORCE_NORMAL_START && START_MODE === "transition-last") {
         // 保留點擊手勢啟用音訊，只測試 NPC 最後一句到星空的銜接。
@@ -4858,57 +4907,97 @@ window.addEventListener("pagehide", event => {
     audioDebug("pagehide", "window", null, { persisted: event.persisted });
 });
 
-window.addEventListener("load", () => {
+// Start preparation before window.load (which can wait on unrelated assets).
+let entryAssetsReady = false;
+let entryPreparation = null;
+const preparedImages = new Map();
 
-    /* =====================================================
-       測試模式 1：
-       直接從 NPC 轉場開始
-    ===================================================== */
+function setEntryHint(text) {
+    const hint = entryScreen.querySelector('.entry-hint');
+    if (hint) hint.textContent = text;
+}
 
-    if (
-        !FORCE_NORMAL_START &&
-        START_MODE === "transition"
-    ) {
-
-        startTransitionTestMode();
-
-        return;
-
+async function retryAsset(operation) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            return await operation();
+        } catch (error) {
+            if (attempt === 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
     }
+}
 
+function prepareNpcImage(url) {
+    if (preparedImages.has(url)) return preparedImages.get(url);
+    const pending = retryAsset(() => new Promise((resolve, reject) => {
+        const img = new Image();
+        const timer = setTimeout(() => finish(new Error('Image timeout: ' + url)), 45000);
+        function finish(error) {
+            clearTimeout(timer);
+            img.onload = img.onerror = null;
+            if (error) reject(error);
+            else resolve(img);
+        }
+        img.onload = () => finish();
+        img.onerror = () => finish(new Error('Image failed: ' + url));
+        img.src = url;
+    })).catch(error => {
+        preparedImages.delete(url);
+        throw error;
+    });
+    preparedImages.set(url, pending);
+    return pending;
+}
 
-    /* =====================================================
-       測試模式 2：
-       直接從星空祝福開始
-    ===================================================== */
-
-    if (
-        !FORCE_NORMAL_START &&
-        START_MODE === "blessing"
-    ) {
-
-        startBlessingTestMode();
-
-        return;
-
-    }
-
-
-    /* =====================================================
-       正式完整流程
-
-       ★ 不在這裡自動開始 NPC。
-         必須等 Sans 點擊「FOR SANS / 點擊開啟」。
-
-       這樣才能：
-       1. 讓 BGM 從 NPC 進場第一刻開始
-       2. 避免瀏覽器阻擋有聲自動播放
-       3. 避免 NPC 在進入畫面後方偷偷跑完動畫
-    ===================================================== */
-
+async function prepareEntryAssets() {
+    if (entryAssetsReady || entryPreparation) return entryPreparation;
     entryScreen.hidden = false;
+    entryScreen.disabled = true;
+    entryScreen.setAttribute('aria-busy', 'true');
+    const images = [...new Set([
+        ...npcImages,
+        ...transitionDialogues.map(dialogue => dialogue.image),
+        'assets/images/NPC-teacher.png'
+    ])];
+    const total = images.length + 3;
+    let completed = 0;
+    const progress = () => setEntryHint(`????????? ${completed}/${total}`);
+    progress();
+    entryPreparation = (async () => {
+        // Prioritize the opening track; do not download/decode all tracks at once.
+        for (const music of [npcBgm, blessingBgm, fireworksBgm]) {
+            await music.prepare();
+            completed++;
+            progress();
+        }
+        // Keep concurrency bounded, and wait for all workers before offering retry.
+        let next = 0;
+        const workers = Array.from({ length: 3 }, async () => {
+            while (next < images.length) {
+                const url = images[next++];
+                await prepareNpcImage(url);
+                completed++;
+                progress();
+            }
+        });
+        const outcomes = await Promise.allSettled(workers);
+        const failure = outcomes.find(result => result.status === 'rejected');
+        if (failure) throw failure.reason;
+        entryAssetsReady = true;
+        setEntryHint('?????????');
+    })().catch(error => {
+        setEntryHint('??????????');
+        console.error('[ASSET LOAD]', error);
+    }).finally(() => {
+        entryScreen.disabled = false;
+        entryScreen.setAttribute('aria-busy', 'false');
+        entryPreparation = null;
+    });
+    return entryPreparation;
+}
 
-});
+prepareEntryAssets();
 
 
 /* =========================================================
