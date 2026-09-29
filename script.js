@@ -118,12 +118,22 @@ function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
         if (!bufferPromise) {
             bufferPromise = retryAsset(async () => {
                 const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), 45000);
+                let timer;
                 try {
-                    const response = await fetch(url, { signal: controller.signal });
-                    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
-                    const bytes = await response.arrayBuffer();
-                    return await audioContext.decodeAudioData(bytes);
+                    return await Promise.race([
+                        (async () => {
+                            const response = await fetch(url, { signal: controller.signal });
+                            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+                            const bytes = await response.arrayBuffer();
+                            return await audioContext.decodeAudioData(bytes);
+                        })(),
+                        new Promise((_, reject) => {
+                            timer = setTimeout(() => {
+                                controller.abort();
+                                reject(new Error(`${url}: download or decode timeout`));
+                            }, 25000);
+                        })
+                    ]);
                 } finally {
                     clearTimeout(timer);
                 }
@@ -291,11 +301,6 @@ async function startFullBirthdayCard() {
         return;
     }
 
-    if (!entryAssetsReady) {
-        prepareEntryAssets();
-        return;
-    }
-
     entryStarted = true;
 
     // Resume during the actual tap. Later scenes only create their own source.
@@ -319,6 +324,17 @@ async function startFullBirthdayCard() {
         return;
     } finally {
         clearTimeout(resumeTimer);
+    }
+
+    // Unlock audio with a real tap BEFORE downloading/decoding.
+    // A second tap after preparation starts playback with a fresh user gesture.
+    if (!entryAssetsReady) {
+        try {
+            await prepareEntryAssets();
+        } finally {
+            entryStarted = false;
+        }
+        return;
     }
 
     document.body.classList.remove(
@@ -4962,7 +4978,7 @@ async function prepareEntryAssets() {
     ])];
     const total = images.length + 3;
     let completed = 0;
-    const progress = () => setEntryHint(`????????? ${completed}/${total}`);
+    const progress = () => setEntryHint(`正在準備音樂與圖片 ${completed}/${total}`);
     progress();
     entryPreparation = (async () => {
         // Prioritize the opening track; do not download/decode all tracks at once.
@@ -4985,9 +5001,9 @@ async function prepareEntryAssets() {
         const failure = outcomes.find(result => result.status === 'rejected');
         if (failure) throw failure.reason;
         entryAssetsReady = true;
-        setEntryHint('?????????');
+        setEntryHint('準備完成，點擊開啟');
     })().catch(error => {
-        setEntryHint('??????????');
+        setEntryHint('載入逾時或失敗，點擊重試');
         console.error('[ASSET LOAD]', error);
     }).finally(() => {
         entryScreen.disabled = false;
@@ -4997,7 +5013,10 @@ async function prepareEntryAssets() {
     return entryPreparation;
 }
 
-prepareEntryAssets();
+// Do not gate the first gesture behind AudioContext decoding.
+entryScreen.disabled = false;
+entryScreen.setAttribute('aria-busy', 'false');
+setEntryHint('點擊準備生日卡片');
 
 
 /* =========================================================
