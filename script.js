@@ -627,8 +627,7 @@ const blessingLines = [
 
 {
     text:
-        "你的光，<br>" +
-        "也不會因為一時沒被看見就消失。",
+        "你的光，也不會因為一時沒被看見就消失。",
 
     type: "story",
     stay: 2200
@@ -671,7 +670,8 @@ const blessingLines = [
 {
     text:
 
-        "一步一步，走向自己想去的地方。",
+        "一步一步，<br>" +
+        "走向自己想去的地方。",
 
     type: "story",
     stay: 2200
