@@ -106,6 +106,7 @@ musicPlayer.preload = 'auto';
 musicPlayer.loop = true;
 let activeMusic = null;
 let wantedMusic = null;
+const preparedAudioUrls = new Map();
 
 const musicRetryButton = document.createElement('button');
 musicRetryButton.type = 'button';
@@ -147,7 +148,7 @@ function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
             if (activeMusic !== music) {
                 if (activeMusic) activeMusic.pause();
                 activeMusic = music;
-                musicPlayer.src = url;
+                musicPlayer.src = preparedAudioUrls.get(url) || url;
                 musicPlayer.volume = fadeInSeconds ? 0 : volume;
                 // Safari permits subsequent scene changes on the same element
                 // after the first tap starts it. A visible retry handles blocks.
@@ -272,6 +273,16 @@ async function startFullBirthdayCard() {
     }
 
     entryStarted = true;
+
+    // First tap prepares every asset. Second tap starts audio with an iOS gesture.
+    if (!entryAssetsReady) {
+        try {
+            await prepareEntryAssets();
+        } finally {
+            entryStarted = false;
+        }
+        return;
+    }
 
     // The first scene calls play() within this tap, allowing iOS playback.
     document.body.classList.remove(
@@ -4860,10 +4871,108 @@ window.addEventListener("pagehide", event => {
     audioDebug("pagehide", "window", null, { persisted: event.persisted });
 });
 
-// Native audio streams each scene on demand; the entry button never waits
-// for every music file or image to finish downloading.
+// Prepare complete audio bytes and image downloads, without decodeAudioData.
+// A local Blob URL lets the browser play each track without later network stalls.
+let entryAssetsReady = false;
+let entryPreparation = null;
+const preparedImages = new Map();
+
+function setEntryHint(text) {
+    const hint = entryScreen.querySelector('.entry-hint');
+    if (hint) hint.textContent = text;
+}
+
+async function prepareAudioFile(url) {
+    if (preparedAudioUrls.has(url)) return;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 120000);
+        try {
+            const response = await fetch(url, { signal: controller.signal });
+            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+            const blob = await response.blob();
+            if (!blob.size) throw new Error(`${url}: 空白音檔`);
+            preparedAudioUrls.set(url, URL.createObjectURL(blob));
+            return;
+        } catch (error) {
+            if (attempt === 1) throw new Error(`${url}: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+}
+
+async function prepareNpcImage(url) {
+    if (preparedImages.has(url)) return preparedImages.get(url);
+    const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        const timer = setTimeout(() => finish(new Error(`圖片逾時：${url}`)), 90000);
+        function finish(error) {
+            clearTimeout(timer);
+            img.onload = img.onerror = null;
+            if (error) reject(error);
+            else resolve(img);
+        }
+        img.onload = () => finish();
+        img.onerror = () => finish(new Error(`圖片載入失敗：${url}`));
+        img.src = url;
+    }).catch(error => {
+        preparedImages.delete(url);
+        throw error;
+    });
+    preparedImages.set(url, promise);
+    return promise;
+}
+
+function prepareEntryAssets() {
+    if (entryAssetsReady || entryPreparation) return entryPreparation;
+    entryScreen.disabled = true;
+    entryScreen.setAttribute('aria-busy', 'true');
+    const tracks = [npcBgm, blessingBgm, fireworksBgm];
+    const images = [...new Set([
+        ...npcImages,
+        ...transitionDialogues.map(dialogue => dialogue.image),
+        'assets/images/NPC-teacher.png'
+    ])];
+    const total = tracks.length + images.length;
+    let completed = 0;
+    const progress = (label) => setEntryHint(`正在準備 ${completed}/${total}：${label}`);
+    progress('音樂與圖片');
+    entryPreparation = (async () => {
+        for (const music of tracks) {
+            progress(music.src.split('/').pop());
+            await prepareAudioFile(music.src);
+            completed++;
+        }
+        let next = 0;
+        const workers = Array.from({ length: 3 }, async () => {
+            while (next < images.length) {
+                const url = images[next++];
+                progress(url.split('/').pop());
+                await prepareNpcImage(url);
+                completed++;
+            }
+        });
+        const outcomes = await Promise.allSettled(workers);
+        const failure = outcomes.find(item => item.status === 'rejected');
+        if (failure) throw failure.reason;
+        entryAssetsReady = true;
+        setEntryHint('準備完成，點擊開啟');
+    })().catch(error => {
+        console.error('[ASSET LOAD]', error);
+        setEntryHint('準備失敗，點擊重試');
+    }).finally(() => {
+        entryScreen.disabled = false;
+        entryScreen.setAttribute('aria-busy', 'false');
+        entryPreparation = null;
+    });
+    return entryPreparation;
+}
+
 entryScreen.disabled = false;
 entryScreen.setAttribute('aria-busy', 'false');
+setEntryHint('點擊準備生日卡片');
 
 /* =========================================================
    ★ 開發測試：
