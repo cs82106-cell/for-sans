@@ -2501,3 +2501,33 @@ body.fireworks-mode .star-field {
     opacity: 0 !important;
     visibility: hidden !important;
 }
+
+/* 開場 NPC：手機上讓長對話留在上方，NPC 在下方。 */
+@media (max-width: 760px) {
+    .npc-scene .dialog-box {
+        top: 26%;
+        width: 86vw;
+        padding: 25px 45px 28px 28px;
+        font-size: 20px;
+    }
+
+    .npc-scene .npc {
+        width: 175px;
+        top: 70%;
+        left: 20%;
+        animation: npcWalkInMobile 5s linear forwards;
+    }
+
+    .site-not-started .npc-scene .npc {
+        animation-play-state: paused;
+    }
+}
+
+@keyframes npcWalkInMobile {
+    from {
+        transform: translate(100vw, -50%);
+    }
+    to {
+        transform: translate(-50%, -50%);
+    }
+}
