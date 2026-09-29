@@ -4937,11 +4937,11 @@ function prepareEntryAssets() {
     ])];
     const total = tracks.length + images.length;
     let completed = 0;
-    const progress = (label) => setEntryHint(`正在準備 ${completed}/${total}：${label}`);
+    const progress = () => setEntryHint(`正在準備生日卡片 ${completed}/${total}`);
     progress('音樂與圖片');
     entryPreparation = (async () => {
         for (const music of tracks) {
-            progress(music.src.split('/').pop());
+            progress();
             await prepareAudioFile(music.src);
             completed++;
         }
@@ -4949,7 +4949,7 @@ function prepareEntryAssets() {
         const workers = Array.from({ length: 3 }, async () => {
             while (next < images.length) {
                 const url = images[next++];
-                progress(url.split('/').pop());
+                progress();
                 await prepareNpcImage(url);
                 completed++;
             }
