@@ -17,6 +17,9 @@
    → 直接從問答結束後的 NPC 轉場開始
    → 「呼——」開始
 
+   "transition-last"
+   → 點擊開啟後，只保留 NPC 最後一句與退場，再進入星空
+
    "blessing"
    → 直接跳過 NPC
    → 從星空祝福開始
@@ -25,7 +28,7 @@
    const START_MODE = "normal";
 ========================================================= */
 
-const START_MODE = "normal";
+const START_MODE = "transition-last";
 
 /* =========================================================
    ★ 暫時：第二段星空祝福卡點測試
@@ -101,7 +104,7 @@ console.log("[AUDIO DEBUG]", {
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let activeMusic = null;
 
-function makeMusic(name, url, defaultVolume) {
+function makeMusic(name, url, defaultVolume, fadeInSeconds = 0) {
     const gain = audioContext.createGain();
     gain.gain.value = defaultVolume;
     gain.connect(audioContext.destination);
@@ -128,7 +131,8 @@ function makeMusic(name, url, defaultVolume) {
         get volume() { return volume; },
         set volume(value) {
             volume = Math.max(0, Math.min(1, value));
-            gain.gain.value = volume;
+            gain.gain.cancelScheduledValues(audioContext.currentTime);
+            gain.gain.setValueAtTime(volume, audioContext.currentTime);
         },
         pause() {
             generation++;
@@ -154,7 +158,13 @@ function makeMusic(name, url, defaultVolume) {
                 node.buffer = buffer;
                 node.loop = true;
                 node.connect(gain);
-                node.start();
+                const startedAt = audioContext.currentTime;
+                gain.gain.cancelScheduledValues(startedAt);
+                gain.gain.setValueAtTime(fadeInSeconds > 0 ? 0 : volume, startedAt);
+                if (fadeInSeconds > 0) {
+                    gain.gain.linearRampToValueAtTime(volume, startedAt + fadeInSeconds);
+                }
+                node.start(startedAt);
                 source = node;
                 activeMusic = music;
                 audioDebug('started', name, music);
@@ -167,8 +177,9 @@ function makeMusic(name, url, defaultVolume) {
 }
 
 const npcBgm = makeMusic('npcBgm', 'assets/audio/npc_bgm.mp3', 0.18);
-const blessingBgm = makeMusic('blessingBgm', 'assets/audio/幾分之幾.mp3', 0.20);
-const fireworksBgm = makeMusic('fireworksBgm', 'assets/audio/HBD.mp3', 0.22);
+// 最後一個參數為淡入秒數：前 0.5 秒從靜音漸增至設定音量。
+const blessingBgm = makeMusic('blessingBgm', 'assets/audio/幾分之幾.mp3', 0.20, 0.5);
+const fireworksBgm = makeMusic('fireworksBgm', 'assets/audio/HBD.mp3', 0.22, 0.5);
 let entryStarted = false;
 let npcBgmStarted = false;
 let blessingBgmStarted = false;
@@ -176,7 +187,6 @@ let fireworksBgmStarted = false;
 let npcBgmFadeTimer = null;
 let blessingBgmFadeTimer = null;
 
-const blessingMusicStartAfter = 150;
 const blessingStarTailDuration = 4200;
 
 function playSceneMusic(music, name, volume) {
@@ -188,7 +198,7 @@ function playSceneMusic(music, name, volume) {
     }
     music.volume = volume;
     audioDebug('play-request', name, music);
-    music.play().catch(error => {
+    return music.play().catch(error => {
         audioDebug('play-rejected', name, music, { error: String(error) });
         if (music === npcBgm) npcBgmStarted = false;
         if (music === blessingBgm) blessingBgmStarted = false;
@@ -209,7 +219,7 @@ function startBlessingBgm() {
 function startFireworksBgm() {
     if (fireworksBgmStarted) return;
     fireworksBgmStarted = true;
-    playSceneMusic(fireworksBgm, 'fireworksBgm', 0.22);
+    return playSceneMusic(fireworksBgm, 'fireworksBgm', 0.22);
 }
 
 function fadeMusic(music, duration, normalVolume, timerName) {
@@ -280,6 +290,18 @@ function startFullBirthdayCard() {
         "hide"
     );
 
+    if (!FORCE_NORMAL_START && START_MODE === "transition-last") {
+        // 保留點擊手勢啟用音訊，只測試 NPC 最後一句到星空的銜接。
+        npcScene.style.display = "none";
+        startNpcBgm();
+
+        setTimeout(() => {
+            startTransitionTestMode(transitionDialogues.length - 1);
+        }, 900);
+
+        return;
+    }
+
     /*
        ★ 第二段卡點測試模式
        FOR SANS → 點擊開啟 → 直接進星空祝福
@@ -341,7 +363,7 @@ entryScreen.addEventListener(
 ========================================================= */
 
 const dialogues = [
-    "聽說，今天是一位叫做 Sans 的萌妹生日……",
+    "聽說，今天是 Sans 大小姐的生日……",
     "小李姐姐派我來送生日祝福",
     "……？",
     "怎麼還有五個問題(｡ŏ_ŏ)",
@@ -527,12 +549,12 @@ const blessingLines = [
     {
         text: "嗨Sans",
         type: "title",
-        stay: 2000
+        stay: 1500
     },
     {
         text: "生日快樂。",
         type: "title",
-        stay: 2000
+        stay: 1500
     },
 
     {
@@ -541,31 +563,32 @@ const blessingLines = [
             "還是會覺得這件事挺奇妙的。",
 
         type: "story",
-        stay: 3000
+        stay: 2200
     },
 
     {
         text:
             "那麼大的世界，原本毫無交集的兩顆星，<br>" +
-            "卻在某個偶然裡，相遇了。",
+            "卻在某個偶然裡相遇了。",
 
         type: "story",
-        stay: 3200
+        stay: 2200
     },
 
 {
     text:
         "這一路，<br>" +
-        "看過你很多不同的樣子。",
+        "看過你意氣風發的樣子，<br>" +
+        "也看過你懷疑自己的時候。",
 
     type: "story",
-    stay: 2200
+    stay: 3000
 },
 
 {
     text:
-        "有意氣風發的時候，<br>" +
-        "也有懷疑自己的時候。",
+        "不管是哪一種樣子，<br>" +
+        "都只是這一路上的一部分。",
 
     type: "story",
     stay: 2200
@@ -590,10 +613,18 @@ const blessingLines = [
 
 {
     text:
-        "還好世界很大，<br>" ,
+        "你的光，也不會因為一時沒被看見就消失。",
 
     type: "story",
-    stay: 1500
+    stay: 2200
+},
+
+{
+    text:
+        "世界這麼大，<br>" ,
+
+    type: "story",
+    stay: 1200
 },
 
 {
@@ -610,7 +641,7 @@ const blessingLines = [
         "新的一歲，<br>" ,
 
     type: "story",
-    stay: 1500
+    stay: 1200
 },
 {
     text:
@@ -625,8 +656,7 @@ const blessingLines = [
 {
     text:
 
-        "更自信，<br>" +
-        "也更強大，",
+        "一步一步，走向自己想去的地方。",
 
     type: "story",
     stay: 2200
@@ -645,10 +675,10 @@ const blessingLines = [
     text: "__BIRTHDAY_WISH__",
 
     type: "wish",
-    stay: 3500
+    stay: 2200
 },
 
-{
+{ 
     text:
 
         "如願",
@@ -665,8 +695,11 @@ const blessingLines = [
 
    ★ 之後調整節奏主要改這裡
 
+   musicStartDelay
+   星空出現後多久開始播放音樂
+
    startDelay
-   星空出現後多久開始第一句
+   音樂開始後多久顯示第一句
 
    fadeIn
    文字淡入多久
@@ -680,11 +713,14 @@ const blessingLines = [
 
 const blessingTiming = {
 
-    // ★ 星空出現 1.6 秒後開始第一句
-    startDelay: 1600,
+    // N：星空出現後，等待多久才播放音樂（毫秒，1000 = 1 秒）
+    musicStartDelay: 2250,
+
+    // X：開始播放音樂後，等待多久才顯示第一句文字（毫秒）
+    startDelay: 1300,
 
     // 文字淡入 1.15 秒
-    fadeIn: 1150,
+    fadeIn: 1200,
 
     // 文字淡出 0.9 秒
     fadeOut: 900,
@@ -1085,8 +1121,8 @@ function createStarField() {
 /*
    ★ 煙火篇時間設定
 
-   introFireworksDuration
-   = 前面純煙火播放多久後開始進入文字
+   hbdToTextDelay
+   = HBD 開始後多久顯示第一段字幕
    1000 = 1 秒
 
    birthdaySecondLineDelay
@@ -1097,48 +1133,25 @@ const fireworksTiming = {
     /*
        ★ 第三段進場卡點
 
-       finalFinalDelay
+       finalFinalDelay（NN）
        = 星空完全進入黑屏後，
          等多久才顯示「最後最後........」
 
-       finalFinalStay
+       finalFinalStay（XX）
        = 「最後最後........」完整顯示多久
 
        finalFinalFade
        = 文字淡入 / 淡出速度
     */
-    finalFinalDelay: 500,
+    finalFinalDelay: 1200,
     finalFinalStay: 1800,
     finalFinalFade: 260,
 
     /*
-       ★ HBD 音樂提前進場時間
-
-       =「最後最後........」完整顯示的停留時間結束前，
-         提前多久開始播放 HBD。
-
-       300 = 提前 0.3 秒
-       500 = 提前 0.5 秒
-
-       ★ 只控制 HBD 音樂，不控制煙火。
+       ★ 黑幕 2：「最後最後........」完全消失後，
+         維持純黑畫面多久才播放 HBD。
     */
-    hbdEarlyStart: 500,
-
-    /*
-       ★「最後最後........」完全消失後，
-         再維持純黑畫面多久才開始煙火。
-
-       ★ 這個現在只控制煙火進場，
-         HBD 已經會在上面提前播放。
-    */
-    finalFinalAfterDelay: 1000,
-
-    /*
-       ★「如願」淡出後，真正全黑停留多久
-       1000 = 1 秒
-       想黑屏更久，只改這個數字。
-    */
-    blackScreenDuration: 2000,
+    finalFinalAfterDelay: 1300,
 
     /*
        ★ 黑幕淡入 / 淡出的速度
@@ -1146,14 +1159,14 @@ const fireworksTiming = {
     blackFadeDuration: 650,
 
     /*
-       ★ 黑幕退掉後，多久開始文字段背景煙火
+       ★ HBD 開始後，多久開始文字段背景煙火（不晚於字幕）
     */
-    transitionDelay: 350,
+    transitionDelay: 550,
 
     /*
-       ★ 前面純煙火播放多久後開始 SANS
+       ★ HBD 開始後，多久顯示第一段 SANS 字幕
     */
-    introFireworksDuration: 1600,
+    hbdToTextDelay: 1950,
 
     /*
        ★ SANS 出現後，多久再出現 HAPPY BIRTHDAY
@@ -1247,7 +1260,7 @@ async function playBlackScreenTransition() {
        =====================================================
        ★ 第三段進場
 
-       全黑後先停 0.5 秒，
+       全黑後先等待 finalFinalDelay（NN），
        再顯示「最後最後........」
     =====================================================
     */
@@ -1285,7 +1298,7 @@ async function playBlackScreenTransition() {
         "center";
 
     finalFinalText.style.fontFamily =
-        '"Microsoft JhengHei", sans-serif';
+        'var(--birthday-font-family)';
 
     finalFinalText.style.fontSize =
         "clamp(24px, 3.5vw, 42px)";
@@ -1319,35 +1332,10 @@ async function playBlackScreenTransition() {
         "1";
 
 
-    /*
-       ★「最後最後........」停留期間：
-         HBD 會在結束前 hbdEarlyStart 毫秒先開始。
+    // 等文字完全淡入，再計算文字停留時間。
+    await wait(fireworksTiming.finalFinalFade);
 
-         例如：
-         finalFinalStay = 1500
-         hbdEarlyStart = 500
-
-         → 文字完整顯示 1.0 秒後 HBD 開始
-         → 再過 0.5 秒文字開始淡出
-    */
-
-    const hbdEarlyStart =
-        Math.min(
-            fireworksTiming.hbdEarlyStart,
-            fireworksTiming.finalFinalStay
-        );
-
-    await wait(
-        fireworksTiming.finalFinalStay -
-        hbdEarlyStart
-    );
-
-    setAudioDebugScene("hbd-start-point");
-    startFireworksBgm();
-
-    await wait(
-        hbdEarlyStart
-    );
+    await wait(fireworksTiming.finalFinalStay);
 
 
     /*
@@ -1367,7 +1355,7 @@ async function playBlackScreenTransition() {
     /*
        ★「最後最後........」消失後，
          再保持純黑畫面一段可調整的時間，
-         然後才開始煙火。
+         然後才播放 HBD。
     */
 
     await wait(
@@ -1379,30 +1367,21 @@ async function playBlackScreenTransition() {
        =====================================================
        ★ 煙火進場
 
-       HBD 已經在「最後最後........」結束前提前播放。
-       這裡只負責開始煙火。
+       黑幕 2 結束後播放 HBD，再計算字幕等待時間。
     =====================================================
     */
 
-    startFinalFireworks();
+    setAudioDebugScene("hbd-start-point");
+    await startFireworksBgm();
+    const hbdStartedAt = performance.now();
 
-
-    /*
-       黑幕稍停一下，
-       讓煙火 Canvas 已經準備好，
-       再把黑幕退掉。
-    */
-
-    await wait(120);
-
-    blackScreen.style.opacity =
-        "0";
-
-    await wait(
-        fireworksTiming.blackFadeDuration
-    );
-
+    // 星空已被黑幕蓋住，直接隱藏星星，避免字幕短延遲時被黑幕遮住。
+    blessingScene.style.background = "#000";
+    const starField = blessingScene.querySelector(".star-field");
+    if (starField) starField.style.visibility = "hidden";
     blackScreen.remove();
+    startFinalFireworks(hbdStartedAt);
+
 
 }
 
@@ -1410,7 +1389,7 @@ async function playBlackScreenTransition() {
 let fireworksStarted = false;
 
 
-async function startFinalFireworks() {
+async function startFinalFireworks(hbdStartedAt = performance.now()) {
 
     /*
        ★ 煙火正式開始時切成全畫面純黑
@@ -3506,7 +3485,7 @@ async function startFinalFireworks() {
         "0";
 
     fireworkText.style.fontFamily =
-        '"Microsoft JhengHei", sans-serif';
+        'var(--birthday-font-family)';
 
     fireworkText.style.fontWeight =
         "700";
@@ -3545,6 +3524,9 @@ async function startFinalFireworks() {
 
         fireworkText.textContent =
             text;
+
+        fireworkText.style.fontWeight = "400";
+        fireworkText.style.letterSpacing = "0";
 
         fireworkText.style.fontSize =
             size;
@@ -3597,6 +3579,8 @@ async function startFinalFireworks() {
     ===================================================== */
 
     async function showBirthdayTitle() {
+        fireworkText.style.fontWeight = "400";
+        fireworkText.style.letterSpacing = "0";
 
         /*
            SANS / HAPPY BIRTHDAY 出現期間，
@@ -3632,7 +3616,7 @@ async function startFinalFireworks() {
                         filter 1s ease;
                 "
             >
-                HAPPY BIRTHDAY
+                Happy Birthday
             </div>
         `;
 
@@ -3723,8 +3707,8 @@ async function startFinalFireworks() {
                 text-align: center;
                 font-size: clamp(50px, 7vw, 96px);
                 line-height: 1.05;
-                font-weight: 650;
-                letter-spacing: 0.12em;
+                font-weight: 400;
+                letter-spacing: 0;
             ">
                 SANS
             </div>
@@ -3738,7 +3722,7 @@ async function startFinalFireworks() {
                 font-weight: 600;
                 letter-spacing: 0.08em;
             ">
-                生日快樂
+                Happy Birthday
             </div>
 
             <div style="
@@ -3831,7 +3815,7 @@ async function startFinalFireworks() {
             "rgba(255,255,255,.96)";
 
         button.style.fontFamily =
-            '"Microsoft JhengHei", sans-serif';
+            'var(--birthday-font-family)';
 
         button.style.fontSize =
             "clamp(14px, 1.6vw, 17px)";
@@ -4045,7 +4029,7 @@ async function startFinalFireworks() {
             "center";
 
         title.style.fontFamily =
-            '"Microsoft JhengHei", sans-serif';
+            'var(--birthday-font-family)';
 
         title.style.fontSize =
             "clamp(22px, 3.2vw, 30px)";
@@ -4064,7 +4048,7 @@ async function startFinalFireworks() {
             document.createElement("div");
 
         content.style.fontFamily =
-            '"Microsoft JhengHei", sans-serif';
+            'var(--birthday-font-family)';
 
         content.style.fontSize =
             "clamp(16px, 2vw, 19px)";
@@ -4151,7 +4135,7 @@ async function startFinalFireworks() {
             "#fff";
 
         closeButton.style.fontFamily =
-            '"Microsoft JhengHei", sans-serif';
+            'var(--birthday-font-family)';
 
         closeButton.style.fontSize =
             "15px";
@@ -4345,11 +4329,7 @@ async function startFinalFireworks() {
 
         signature.innerHTML = `
             <div style="
-                font-family:
-                    'Segoe Script',
-                    'Bradley Hand ITC',
-                    'Lucida Handwriting',
-                    cursive;
+                font-family: var(--birthday-font-family);
                 font-size: clamp(15px, 1.55vw, 18px);
                 font-weight: 400;
                 font-style: italic;
@@ -4365,11 +4345,7 @@ async function startFinalFireworks() {
             </div>
 
             <div style="
-                font-family:
-                    'Segoe Script',
-                    'Bradley Hand ITC',
-                    'Lucida Handwriting',
-                    cursive;
+                font-family: var(--birthday-font-family);
                 font-size: clamp(34px, 4.1vw, 50px);
                 font-weight: 500;
                 font-style: italic;
@@ -4492,7 +4468,8 @@ async function startFinalFireworks() {
     ===================================================== */
 
     await wait(
-        fireworksTiming.transitionDelay
+        Math.max(0, Math.min(fireworksTiming.transitionDelay, fireworksTiming.hbdToTextDelay)
+            - (performance.now() - hbdStartedAt))
     );
 
 
@@ -4504,7 +4481,7 @@ async function startFinalFireworks() {
 
 
     await wait(
-        fireworksTiming.introFireworksDuration
+        Math.max(0, fireworksTiming.hbdToTextDelay - (performance.now() - hbdStartedAt))
     );
 
 
@@ -4937,7 +4914,7 @@ window.addEventListener("load", () => {
    直接跳到問答完成後 NPC 轉場
 ========================================================= */
 
-function startTransitionTestMode() {
+function startTransitionTestMode(startIndex = 0) {
 
     /*
        測試模式不顯示 FOR SANS 進入畫面
@@ -5001,7 +4978,7 @@ function startTransitionTestMode() {
        直接開始 NPC 轉場
     */
 
-    startTransitionScene();
+    startTransitionScene(startIndex);
 
 }
 
@@ -6230,10 +6207,10 @@ function closeQuestionnaire() {
    啟動 NPC 轉場
 ========================================================= */
 
-function startTransitionScene() {
+function startTransitionScene(startIndex = 0) {
 
     currentTransitionDialogue =
-        0;
+        startIndex;
 
     transitionFinished =
         false;
@@ -6247,7 +6224,7 @@ function startTransitionScene() {
 
 
     transitionNpc.src =
-        transitionDialogues[0].image;
+        transitionDialogues[startIndex].image;
 
 
     transitionScene.setAttribute(
@@ -6676,15 +6653,20 @@ function startBlessingScene() {
 
 
     /*
-       ★ 星空出現後等待 1.6 秒，
-         開始播放第一句。
+       星空出現 → 等待 N → 播放音樂 → 等待 X → 顯示文字。
     */
 
     setTimeout(() => {
 
-        playBlessingOpening();
+        startBlessingBgm();
 
-    }, blessingTiming.startDelay);
+        setTimeout(() => {
+
+            playBlessingOpening();
+
+        }, blessingTiming.startDelay);
+
+    }, blessingTiming.musicStartDelay);
 
 }
 
@@ -6832,56 +6814,9 @@ async function playBlessingOpening() {
         );
 
 
-        /*
-           完全顯示後停留
+        // Keep each line visible for its configured duration.
+        await wait(line.stay);
 
-           ★ 第一行「嗨Sans」：
-             完全顯示後，等待 blessingMusicStartAfter，
-             再直接播放「幾分之幾」。
-
-             目前 blessingMusicStartAfter = 800，
-             也就是「嗨Sans」完整出現 0.8 秒後開始播。
-
-             之後只要改最上面的 blessingMusicStartAfter，
-             不用再算「剩幾秒」。
-        */
-
-        if (
-            index === 0
-        ) {
-
-            const musicStartDelay =
-                Math.min(
-                    blessingMusicStartAfter,
-                    line.stay
-                );
-
-            await wait(
-                musicStartDelay
-            );
-
-            startBlessingBgm();
-
-            await wait(
-                Math.max(
-                    0,
-                    line.stay -
-                    musicStartDelay
-                )
-            );
-
-        } else {
-
-            await wait(
-                line.stay
-            );
-
-        }
-
-
-        /*
-           開始淡出
-        */
 
         blessingOpeningText.classList.remove(
             "show-text"
@@ -6978,4 +6913,3 @@ async function playBlessingOpening() {
     await playBlackScreenTransition();
 
 }
-
