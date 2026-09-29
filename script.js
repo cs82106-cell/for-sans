@@ -363,14 +363,13 @@ entryScreen.addEventListener(
 ========================================================= */
 
 const dialogues = [
-    "听说，今天是 Sans 大小姐的生日……",
-    "小李姐姐派我来送生日祝福",
+    "聽說，今天是 Sans 大小姐的生日……",
+    "小李姐姐派我來送生日祝福",
     "……？",
-    "竟然要先答五个问题(｡ŏ_ŏ)",
+    "竟然要先答五個問題(｡ŏ_ŏ)",
     "你家姐姐事真多(ಠ_ಠ)",
-    "算了，来都来了。",
+    "算了，來都來了。",
     "Sans，接好！！！！"
-
 ];
 
 
@@ -395,83 +394,82 @@ const npcImages = [
 
 const questions = [
     {
-       title: "请问 Sans 最大的优点是什么？",
+        title: "請問 Sans 最大的優點是什麼？",
 
         options: [
             {
                 letter: "A",
-                text: "声线迷人，唱功扎实",
-                comment: "开口即沦陷，确实犯规！"
+                text: "聲線迷人，唱功扎實",
+                comment: "開口即淪陷，確實犯規！"
             },
             {
                 letter: "B",
-                text: "有深度及独特个人魅力",
-                comment: "真正迷人的，从来不只表面！"
+                text: "有深度及獨特個人魅力",
+                comment: "真正迷人的，從來不只表面！"
             },
             {
                 letter: "C",
-                text: "长得好看，颜值在线",
-                comment: "嗯，这题本人应该没有异议吧？"
+                text: "長得好看，顏值在線",
+                comment: "嗯，這題本人應該沒有異議吧？"
             },
             {
                 letter: "D",
                 text: "以上皆是",
-                comment: "很会选嘛，优点这么多确实没必要硬挑一个！"
+                comment: "很會選嘛，優點這麼多確實沒必要硬挑一個！"
             }
         ]
     },
 
     {
-        title: "资深粉丝小李最突出的特质是什么？",
+        title: "資深粉絲小李最突出的特質是什麼？",
 
         options: [
             {
                 letter: "A",
-                text: "慧眼识珠",
-                comment: "慧眼是真的，你值得被看见也是真的。"
+                text: "慧眼識珠",
+                comment: "慧眼是真的，你值得被看見也是真的。"
             },
             {
                 letter: "B",
-                text: "眼光独到",
-                comment: "眼光是一回事，主要还是这颗珠子确实够亮。"
+                text: "眼光獨到",
+                comment: "眼光是一回事，主要還是這顆珠子確實夠亮。"
             },
             {
                 letter: "C",
-                text: "审美卓越",
-                comment: "你能稳稳待在审美区五年，这含金量可以。"
+                text: "審美卓越",
+                comment: "你能穩穩待在審美區五年，這含金量可以。"
             },
             {
                 letter: "D",
-                text: "长情专一",
-                comment: "这么久还能让人觉得值得，你才是关键。"
+                text: "長情專一",
+                comment: "這麼久還能讓人覺得值得，你才是關鍵。"
             }
         ]
     },
 
     {
-        title: "支持 Sans 久了，最容易出现什么后遗症？",
+        title: "支持 Sans 久了，最容易出現什麼後遺症？",
 
         options: [
             {
                 letter: "A",
-                text: "听别人的歌开始变挑",
-                comment: "的确对好声音的要求越来越高。"
+                text: "聽別人的歌開始變挑",
+                comment: "的確對好聲音的要求越來越高。"
             },
             {
                 letter: "B",
-                text: "同一首歌下意识会想「Sans 唱应该也好听」",
-                comment: "这个症状……小李好像特别严重。"
+                text: "同一首歌下意識會想「Sans 唱應該也好聽」",
+                comment: "這個症狀……小李好像特別嚴重。"
             },
             {
                 letter: "C",
-                text: "歌单莫名越来越长",
-                comment: "手机屏幕录像也越来越多....."
+                text: "歌單莫名越來越長",
+                comment: "手機螢幕錄影也越來越多....."
             },
             {
                 letter: "D",
-                text: "以上皆是，且暂无药可医",
-                comment: "确诊。建议放弃治疗，继续听。"
-
+                text: "以上皆是，且暫無藥可醫",
+                comment: "確診。建議放棄治療，繼續聽。"
             }
         ]
     }
@@ -489,12 +487,12 @@ const transitionDialogues = [
     },
 
     {
-        text: "五个问题，全部完成。",
+        text: "五個問題，全部完成。",
         image: "assets/images/NPC_relief.png"
     },
 
     {
-        text: "这下总算可以送生日祝福了吧。",
+        text: "這下總算可以送生日祝福了吧。",
         image: "assets/images/NPC_relief.png"
     },
 
@@ -520,7 +518,7 @@ const transitionDialogues = [
     },
 
     {
-        text: "真的很能写欸。",
+        text: "真的很能寫欸。",
         image: "assets/images/NPC_awkward.png"
     },
 
@@ -530,11 +528,10 @@ const transitionDialogues = [
     },
 
     {
-        text: "接下来，交给他自己说吧。",
+        text: "接下來，交給他自己說吧。",
         image: "assets/images/NPC_look.png"
     }
 ];
-
 
 
 /* =========================================================
@@ -549,21 +546,21 @@ const transitionDialogues = [
 
 const blessingLines = [
 
-{
+    {
         text: "嗨Sans",
         type: "title",
         stay: 1500
     },
     {
-        text: "生日快乐。",
+        text: "生日快樂。",
         type: "title",
         stay: 1500
     },
 
     {
         text:
-            "认识你这么久，偶尔回头想，<br>" +
-            "还是会觉得这件事挺奇妙的。",
+            "認識你這麼久，偶爾回頭想，<br>" +
+            "還是會覺得這件事挺奇妙的。",
 
         type: "story",
         stay: 2200
@@ -571,9 +568,9 @@ const blessingLines = [
 
     {
         text:
-            "那么大的世界，<br>" +
-            "原本毫无交集的两颗星，<br>" +
-            "却在某个偶然里相遇了。",
+            "那麼大的世界，<br>" +
+            "原本毫無交集的兩顆星，<br>" +
+            "卻在某個偶然裡相遇了。",
 
         type: "story",
         stay: 2200
@@ -581,9 +578,9 @@ const blessingLines = [
 
 {
     text:
-        "这一路，<br>" +
-        "看过你意气风发的样子，<br>" +
-        "也看过你怀疑自己的时候。",
+        "這一路，<br>" +
+        "看過你意氣風發的樣子，<br>" +
+        "也看過你懷疑自己的時候。",
 
     type: "story",
     stay: 3000
@@ -591,8 +588,8 @@ const blessingLines = [
 
 {
     text:
-        "不管是哪一种样子，<br>" +
-        "都只是这一路上的一部分。",
+        "不管是哪一種樣子，<br>" +
+        "都只是這一路上的一部分。",
 
     type: "story",
     stay: 2200
@@ -600,7 +597,7 @@ const blessingLines = [
 
 {
     text:
-        "想说的是，",
+        "想說的是，",
 
     type: "story",
     stay: 1500
@@ -608,8 +605,8 @@ const blessingLines = [
 
 {
     text:
-        "找对适合自己的舞台，<br>" +
-        "本来就不是件容易的事。",
+        "找對適合自己的舞台，<br>" +
+        "本來就不是件容易的事。",
 
     type: "story",
     stay: 2200
@@ -617,7 +614,8 @@ const blessingLines = [
 
 {
     text:
-        "你的光，也不会因为一时没被看见就消失。",
+        "你的光，<br>" +
+        "也不會因為一時沒被看見就消失。",
 
     type: "story",
     stay: 2200
@@ -625,7 +623,7 @@ const blessingLines = [
 
 {
     text:
-        "世界这么大，<br>" ,
+        "世界這麼大，<br>" ,
 
     type: "story",
     stay: 1200
@@ -633,8 +631,8 @@ const blessingLines = [
 
 {
     text:
-        "总会有新的地方、新的人，<br>" +
-        "让你重新看见自己的光。",
+        "總會有新的地方、新的人，<br>" +
+        "讓你重新看見自己的光。",
 
     type: "story",
     stay: 2200
@@ -642,7 +640,7 @@ const blessingLines = [
 
 {
     text:
-        "新的一岁，<br>" ,
+        "新的一歲，<br>" ,
 
     type: "story",
     stay: 1200
@@ -650,7 +648,7 @@ const blessingLines = [
 {
     text:
 
-        "愿你能继续唱喜欢的歌，<br>" +
+        "願你能繼續唱喜歡的歌，<br>" +
         "做想做的事，",
 
     type: "story",
@@ -661,7 +659,7 @@ const blessingLines = [
     text:
 
         "一步一步，<br>" +
-       "走向自己想去的地方。",
+        "走向自己想去的地方。",
 
     type: "story",
     stay: 2200
@@ -686,8 +684,7 @@ const blessingLines = [
 { 
     text:
 
-        "如愿",
-
+        "如願",
 
     type: "story",
     stay: 2200
@@ -3711,7 +3708,7 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
             <div style="
                 width: 100%;
                 text-align: center;
-                font-size: clamp(50px, 7vw, 96px);
+                font-size: clamp(53px, 7vw, 96px);
                 line-height: 1.05;
                 font-weight: 400;
                 letter-spacing: 0;
@@ -3723,7 +3720,7 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
                 width: 100%;
                 margin-top: 0.28em;
                 text-align: center;
-                font-size: clamp(40px, 5.6vw, 78px);
+                font-size: clamp(43px, 5.6vw, 78px);
                 line-height: 1.18;
                 font-weight: 600;
                 letter-spacing: 0.08em;
@@ -3735,12 +3732,12 @@ async function startFinalFireworks(hbdStartedAt = performance.now()) {
                 width: 100%;
                 margin-top: 0.48em;
                 text-align: center;
-                font-size: clamp(25px, 3.4vw, 46px);
+                font-size: clamp(28px, 3.4vw, 46px);
                 line-height: 1.45;
                 font-weight: 400;
                 letter-spacing: 0.07em;
             ">
-                祝你有个美好的一天
+                祝你有個美好的一天
             </div>
         `;
 
