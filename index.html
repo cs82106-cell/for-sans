@@ -41,13 +41,15 @@
         id="entry-screen"
         type="button"
         aria-label="開啟 Sans 生日卡片"
+        disabled
+        aria-busy="true"
     >
         <span class="entry-title">
             FOR SANS
         </span>
 
-        <span class="entry-hint">
-            點擊開啟
+        <span class="entry-hint" aria-live="polite">
+            正在準備音樂與圖片……
         </span>
     </button>
 
@@ -473,7 +475,7 @@
          確保 HTML 元素建立完成後再執行。
     ================================================== -->
 
-    <script src="script.js"></script>
+    <script src="script.js?v=first-load-fix-1"></script>
 
 
 </body>
