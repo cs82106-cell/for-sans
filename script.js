@@ -658,8 +658,7 @@ const blessingLines = [
 {
     text:
 
-        "一步一步，<br>" +
-        "走向自己想去的地方。",
+        "一步一步，走向自己想去的地方。",
 
     type: "story",
     stay: 2200
