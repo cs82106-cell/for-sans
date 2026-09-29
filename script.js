@@ -59,6 +59,43 @@ const entryScreen =
     );
 
 
+/* =========================================================
+   ★ AUDIO DEBUG：iPhone / Safari 播放追蹤
+========================================================= */
+
+let audioDebugScene = "page-init";
+
+function audioDebug(event, name, audio, extra = {}) {
+    console.log("[AUDIO DEBUG]", {
+        event,
+        name,
+        scene: audioDebugScene,
+        src: audio ? audio.src : "",
+        paused: audio ? audio.paused : null,
+        currentTime: audio ? audio.currentTime : null,
+        readyState: audio ? audio.readyState : null,
+        networkState: audio ? audio.networkState : null,
+        timestamp: performance.now(),
+        visibilityState: document.visibilityState,
+        ...extra
+    });
+}
+
+function setAudioDebugScene(scene) {
+    audioDebugScene = scene;
+    console.log("[AUDIO DEBUG]", {
+        event: "scene-change",
+        scene,
+        timestamp: performance.now()
+    });
+}
+
+console.log("[AUDIO DEBUG]", {
+    event: "page-init",
+    timestamp: performance.now(),
+    userAgent: navigator.userAgent
+});
+
 const npcBgm =
     new Audio(
         "assets/audio/npc_bgm.mp3"
@@ -73,6 +110,7 @@ npcBgm.loop = true;
 npcBgm.volume = 0.18;
 
 npcBgm.preload = "auto";
+audioDebug("audio-created", "npcBgm", npcBgm);
 
 
 let entryStarted = false;
@@ -115,6 +153,7 @@ blessingBgm.loop = true;
 blessingBgm.volume = 0.20;
 
 blessingBgm.preload = "auto";
+audioDebug("audio-created", "blessingBgm", blessingBgm);
 
 
 let blessingBgmStarted = false;
@@ -167,6 +206,7 @@ function unlockBlessingBgm() {
     blessingBgm.volume = 0;
 
 
+    audioDebug("play-request", "blessingBgm", blessingBgm, { caller: "unlockBlessingBgm" });
     const playPromise =
         blessingBgm.play();
 
@@ -178,7 +218,9 @@ function unlockBlessingBgm() {
         playPromise
             .then(() => {
 
+                audioDebug("play-resolved", "blessingBgm", blessingBgm, { caller: "unlockBlessingBgm" });
                 blessingBgm.pause();
+                audioDebug("pause", "blessingBgm", blessingBgm, { caller: "unlockBlessingBgm" });
 
                 blessingBgm.currentTime = 0;
 
@@ -211,13 +253,6 @@ function unlockBlessingBgm() {
 
 function startBlessingBgm() {
 
-    // Audio fix: make sure NPC BGM cannot overlap with the blessing track.
-    if (!npcBgm.paused) {
-        npcBgm.pause();
-        npcBgm.currentTime = 0;
-    }
-    npcBgmStarted = false;
-
     if (blessingBgmStarted) {
         return;
     }
@@ -232,6 +267,7 @@ function startBlessingBgm() {
     blessingBgm.volume = 0.20;
 
 
+    audioDebug("play-request", "blessingBgm", blessingBgm, { caller: "startBlessingBgm" });
     const playPromise =
         blessingBgm.play();
 
@@ -240,8 +276,11 @@ function startBlessingBgm() {
         playPromise !== undefined
     ) {
 
-        playPromise.catch(
+        playPromise.then(() => {
+            audioDebug("play-resolved", "blessingBgm", blessingBgm, { caller: "startBlessingBgm" });
+        }).catch(
             error => {
+                audioDebug("play-rejected", "blessingBgm", blessingBgm, { caller: "startBlessingBgm", error: String(error) });
 
                 blessingBgmStarted = false;
 
@@ -326,6 +365,7 @@ function fadeOutBlessingBgm(
 
                 blessingBgmFadeTimer = null;
 
+                audioDebug("pause", "blessingBgm", blessingBgm, { caller: "fadeOutBlessingBgm" });
                 blessingBgm.pause();
 
                 blessingBgm.currentTime = 0;
@@ -366,6 +406,7 @@ fireworksBgm.loop = true;
 fireworksBgm.volume = 0.22;
 
 fireworksBgm.preload = "auto";
+audioDebug("audio-created", "fireworksBgm", fireworksBgm);
 
 
 let fireworksBgmStarted = false;
@@ -395,6 +436,7 @@ function unlockFireworksBgm() {
     fireworksBgm.volume = 0;
 
 
+    audioDebug("play-request", "fireworksBgm", fireworksBgm, { caller: "unlockFireworksBgm" });
     const playPromise =
         fireworksBgm.play();
 
@@ -406,7 +448,9 @@ function unlockFireworksBgm() {
         playPromise
             .then(() => {
 
+                audioDebug("play-resolved", "fireworksBgm", fireworksBgm, { caller: "unlockFireworksBgm" });
                 fireworksBgm.pause();
+                audioDebug("pause", "fireworksBgm", fireworksBgm, { caller: "unlockFireworksBgm" });
 
                 fireworksBgm.currentTime = 0;
 
@@ -439,13 +483,6 @@ function unlockFireworksBgm() {
 
 function startFireworksBgm() {
 
-    // Audio fix: make sure the blessing track cannot overlap with HBD.
-    if (!blessingBgm.paused) {
-        blessingBgm.pause();
-        blessingBgm.currentTime = 0;
-    }
-    blessingBgmStarted = false;
-
     if (fireworksBgmStarted) {
         return;
     }
@@ -455,6 +492,7 @@ function startFireworksBgm() {
     fireworksBgm.volume = 0.22;
 
 
+    audioDebug("play-request", "fireworksBgm", fireworksBgm, { caller: "startFireworksBgm" });
     const playPromise =
         fireworksBgm.play();
 
@@ -463,8 +501,11 @@ function startFireworksBgm() {
         playPromise !== undefined
     ) {
 
-        playPromise.catch(
+        playPromise.then(() => {
+            audioDebug("play-resolved", "fireworksBgm", fireworksBgm, { caller: "startFireworksBgm" });
+        }).catch(
             error => {
+                audioDebug("play-rejected", "fireworksBgm", fireworksBgm, { caller: "startFireworksBgm", error: String(error) });
 
                 fireworksBgmStarted = false;
 
@@ -497,6 +538,7 @@ function startNpcBgm() {
     npcBgm.volume = 0.18;
 
 
+    audioDebug("play-request", "npcBgm", npcBgm, { caller: "startNpcBgm" });
     const playPromise =
         npcBgm.play();
 
@@ -505,8 +547,11 @@ function startNpcBgm() {
         playPromise !== undefined
     ) {
 
-        playPromise.catch(
+        playPromise.then(() => {
+            audioDebug("play-resolved", "npcBgm", npcBgm, { caller: "startNpcBgm" });
+        }).catch(
             error => {
+                audioDebug("play-rejected", "npcBgm", npcBgm, { caller: "startNpcBgm", error: String(error) });
 
                 npcBgmStarted = false;
 
@@ -591,6 +636,7 @@ function fadeOutNpcBgm(
 
                 npcBgmFadeTimer = null;
 
+                audioDebug("pause", "npcBgm", npcBgm, { caller: "fadeOutNpcBgm" });
                 npcBgm.pause();
 
                 npcBgm.currentTime = 0;
@@ -621,6 +667,9 @@ function fadeOutNpcBgm(
 
 function startFullBirthdayCard() {
 
+    audioDebug("entry-click", "entryScreen", null, { entryStarted });
+    setAudioDebugScene("entry-click");
+
     if (entryStarted) {
         return;
     }
@@ -631,15 +680,13 @@ function startFullBirthdayCard() {
        ★ 最初點擊時先解鎖第二段「幾分之幾」。
        不會提前出聲。
     */
-    // Audio fix: do not call play() on the second track during entry.
-    blessingBgm.load();
+    unlockBlessingBgm();
 
     /*
        ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
        此時不會出聲。
     */
-    // Audio fix: preload HBD without starting playback.
-    fireworksBgm.load();
+    unlockFireworksBgm();
 
     document.body.classList.remove(
         "site-not-started"
@@ -1559,6 +1606,7 @@ const fireworksTiming = {
 
 
 async function playBlackScreenTransition() {
+    setAudioDebugScene("black-screen-transition");
 
     const blackScreen =
         document.createElement("div");
@@ -1710,6 +1758,7 @@ async function playBlackScreenTransition() {
         hbdEarlyStart
     );
 
+    setAudioDebugScene("hbd-start-point");
     startFireworksBgm();
 
     await wait(
@@ -5234,6 +5283,18 @@ async function startFinalFireworks() {
    START_MODE 會決定從哪裡開始。
 ========================================================= */
 
+document.addEventListener("visibilitychange", () => {
+    audioDebug("visibilitychange", "document", null, { visibilityState: document.visibilityState });
+});
+
+window.addEventListener("pageshow", event => {
+    audioDebug("pageshow", "window", null, { persisted: event.persisted });
+});
+
+window.addEventListener("pagehide", event => {
+    audioDebug("pagehide", "window", null, { persisted: event.persisted });
+});
+
 window.addEventListener("load", () => {
 
     /* =====================================================
@@ -6969,6 +7030,8 @@ function wait(milliseconds) {
 ========================================================= */
 
 function startBlessingScene() {
+
+    setAudioDebugScene("blessing-scene");
 
     if (
         blessingSequenceStarted
