@@ -211,6 +211,13 @@ function unlockBlessingBgm() {
 
 function startBlessingBgm() {
 
+    // Audio fix: make sure NPC BGM cannot overlap with the blessing track.
+    if (!npcBgm.paused) {
+        npcBgm.pause();
+        npcBgm.currentTime = 0;
+    }
+    npcBgmStarted = false;
+
     if (blessingBgmStarted) {
         return;
     }
@@ -432,6 +439,13 @@ function unlockFireworksBgm() {
 
 function startFireworksBgm() {
 
+    // Audio fix: make sure the blessing track cannot overlap with HBD.
+    if (!blessingBgm.paused) {
+        blessingBgm.pause();
+        blessingBgm.currentTime = 0;
+    }
+    blessingBgmStarted = false;
+
     if (fireworksBgmStarted) {
         return;
     }
@@ -617,13 +631,15 @@ function startFullBirthdayCard() {
        ★ 最初點擊時先解鎖第二段「幾分之幾」。
        不會提前出聲。
     */
-    unlockBlessingBgm();
+    // Audio fix: do not call play() on the second track during entry.
+    blessingBgm.load();
 
     /*
        ★ 同一個點擊手勢也預先解鎖第三段 HBD BGM。
        此時不會出聲。
     */
-    unlockFireworksBgm();
+    // Audio fix: preload HBD without starting playback.
+    fireworksBgm.load();
 
     document.body.classList.remove(
         "site-not-started"
